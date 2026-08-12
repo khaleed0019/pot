@@ -7,11 +7,29 @@ import type { Request } from 'express';
 
 dotenv.config();
 
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
+// The only Cloudinary var this project actually sets (in .env / render.yaml) is
+// the combined CLOUDINARY_URL. The SDK *can* auto-parse that from process.env on
+// import, but only if it's already set by the time the `cloudinary` package first
+// loads — which isn't guaranteed given this app's import order. Parsing it
+// ourselves and passing the three fields explicitly avoids that fragility, and
+// previously this call passed CLOUDINARY_CLOUD_NAME/API_KEY/API_SECRET — vars
+// that were never defined anywhere — which overwrote any auto-parsed config with
+// `undefined`, silently breaking every image upload.
+const cloudinaryUrl = process.env.CLOUDINARY_URL;
+if (cloudinaryUrl) {
+  try {
+    const parsed = new URL(cloudinaryUrl);
+    cloudinary.config({
+      cloud_name: parsed.hostname,
+      api_key: parsed.username,
+      api_secret: parsed.password,
+    });
+  } catch {
+    console.warn('CLOUDINARY_URL is set but not a valid cloudinary://key:secret@cloud_name URL');
+  }
+} else {
+  console.warn('CLOUDINARY_URL not set — image uploads will fail');
+}
 
 const storage = createCloudinaryStorage({
   cloudinary: cloudinaryRoot as { v2: typeof cloudinary },
