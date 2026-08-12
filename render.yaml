@@ -1,0 +1,27 @@
+# Render Blueprint — connect repo and deploy backend from Dockerfile
+# Docs: https://render.com/docs/blueprint-spec
+services:
+  - type: web
+    name: property-on-set-api
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: DIRECT_URL
+        sync: false
+      # Public Supabase project URL — used to fetch the JWKS that verifies
+      # Supabase Auth access tokens. Not a secret; safe to bake in directly.
+      - key: SUPABASE_URL
+        value: "https://ycjmustzcfktwzmuasuz.supabase.co"
+      - key: FRONTEND_URL
+        sync: false
+      - key: PORT
+        value: "5000"
+      - key: NODE_ENV
+        value: production
+      - key: CLOUDINARY_URL
+        sync: false

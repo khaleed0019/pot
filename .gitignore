@@ -1,0 +1,18 @@
+node_modules/
+dist/
+.next/
+.env
+.env.local
+.env.*.local
+.env.bak*
+backend/.env
+backend/.env.bak*
+frontend/.env.local
+*.log
+.DS_Store
+firebase-service-account.json
+*-firebase-adminsdk*.json
+
+# Stale local SQLite DB from before the Postgres/Supabase migration
+backend/prisma/dev.db
+backend/prisma/dev.db-journal

@@ -1,0 +1,22 @@
+@import "tailwindcss";
+@config "../../tailwind.config.js";
+
+:root {
+  --foreground-rgb: 0, 0, 0;
+  --background-start-rgb: 214, 219, 220;
+  --background-end-rgb: 255, 255, 255;
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: #f8fafc;
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-primary text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors;
+  }
+  .btn-secondary {
+    @apply border border-primary text-primary px-4 py-2 rounded-lg font-medium hover:bg-accent transition-colors;
+  }
+}

@@ -1,0 +1,47 @@
+# Frontend: use `npm run dev` in ./frontend (deploy to Vercel for production)
+# Database: local Postgres for development (`docker compose up -d db`).
+#   Production uses Supabase — see the commented block in backend/.env.
+#   Free-tier Supabase projects pause after a week of inactivity, so local dev
+#   deliberately does not depend on them.
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: property_on_set
+    ports:
+      # Published so `npm run dev` on the host can reach it at localhost:5432.
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d property_on_set"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${BACKEND_PORT:-5001}:5000"
+    env_file:
+      - ./backend/.env
+    environment:
+      PORT: "5000"
+      NODE_ENV: production
+      # Inside the compose network the DB is reachable by service name, which
+      # overrides the localhost URL that backend/.env uses for host-side dev.
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/property_on_set
+      DIRECT_URL: postgresql://postgres:postgres@db:5432/property_on_set
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:
