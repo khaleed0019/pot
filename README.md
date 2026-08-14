@@ -2,7 +2,7 @@
 
 Real estate marketplace with agent listing workflow, admin CMS, and published-only public listings.
 
-**Full setup & run guide:** [docs/RUN_FULL_STACK.md](docs/RUN_FULL_STACK.md) (local dev + Vercel + Render + Supabase + Firebase).
+**Full setup & run guide:** [docs/RUN_FULL_STACK.md](docs/RUN_FULL_STACK.md) (local dev + Vercel + Render + Supabase). Google sign-in setup: [docs/GOOGLE_AUTH.md](docs/GOOGLE_AUTH.md).
 
 ## Stack (free tiers)
 
@@ -11,22 +11,21 @@ Real estate marketplace with agent listing workflow, admin CMS, and published-on
 | Frontend | [Vercel](https://vercel.com) | Next.js, auto-deploy from GitHub |
 | Backend | [Render](https://render.com) | Docker, free tier (~30s cold start) |
 | Database | [Supabase](https://supabase.com) | PostgreSQL pooler, 500MB free |
-| Auth | [Firebase](https://firebase.google.com) | Email/password + Google |
+| Auth | [Supabase Auth](https://supabase.com/auth) | Email/password + Google, JWKS-verified on the API |
 
 ## Local development
 
 ### Prerequisites
 
 - Node.js 20+
-- Supabase project (or any Postgres with `DATABASE_URL`)
-- Firebase project with Email/Password and Google sign-in enabled
+- Supabase project (database **and** Auth — email/password + Google provider enabled, see [docs/GOOGLE_AUTH.md](docs/GOOGLE_AUTH.md))
 
 ### Backend
 
 ```bash
 cd backend
 cp .env.example .env
-# Fill DATABASE_URL, FIREBASE_SERVICE_ACCOUNT_JSON, FRONTEND_URL=http://localhost:3000
+# Fill DATABASE_URL, DIRECT_URL, SUPABASE_URL, FRONTEND_URL=http://localhost:3000
 npm install
 npx prisma migrate deploy
 npx prisma generate
@@ -40,7 +39,7 @@ API: `http://localhost:5001` (or `PORT` in `.env`) · Health: `GET /health`
 ```bash
 cd frontend
 cp .env.example .env.local
-# Fill Firebase NEXT_PUBLIC_* and NEXT_PUBLIC_API_URL=http://localhost:5001/api
+# Fill NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY, NEXT_PUBLIC_API_URL=http://localhost:5001/api
 npm install
 npm run dev
 ```
@@ -64,11 +63,12 @@ Uses `backend/.env` — no Postgres or frontend containers.
 3. Set **Root Directory** to `frontend`.
 4. Environment variables (Production + Preview):
 
-   - `NEXT_PUBLIC_FIREBASE_API_KEY`
-   - `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`
-   - `NEXT_PUBLIC_FIREBASE_PROJECT_ID`
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
    - `NEXT_PUBLIC_API_URL` = `https://YOUR-RENDER-SERVICE.onrender.com/api`
    - `NEXT_PUBLIC_MAPBOX_TOKEN` (optional)
+
+   If you're adding Google sign-in, also add your production URL (`https://your-app.vercel.app/auth/callback`) to Supabase's Redirect URLs allow-list — see [docs/GOOGLE_AUTH.md](docs/GOOGLE_AUTH.md).
 
 5. Deploy. Vercel rebuilds on every push to the connected branch.
 
@@ -85,7 +85,7 @@ Uses `backend/.env` — no Postgres or frontend containers.
    | Key | Value |
    |-----|--------|
    | `DATABASE_URL` | Supabase **transaction pooler** URI |
-   | `FIREBASE_SERVICE_ACCOUNT_JSON` | Full service account JSON (one line) |
+   | `SUPABASE_URL` | Supabase project URL — used to verify auth tokens |
    | `FRONTEND_URL` | `https://your-app.vercel.app` |
    | `PORT` | `5000` |
    | `CLOUDINARY_URL` | optional |
@@ -102,21 +102,19 @@ See [docs/SUPABASE_MIGRATION.md](docs/SUPABASE_MIGRATION.md) for schema migratio
 
 ---
 
-## Firebase Authentication
+## Supabase Authentication
 
 ### Console setup
 
-1. Create Firebase project.
-2. **Authentication → Sign-in method**: enable **Email/Password** and **Google**.
-3. **Project settings → Your apps → Web**: register app, copy `apiKey`, `authDomain`, `projectId` → frontend env.
-4. **Project settings → Service accounts → Generate new private key** → paste JSON into Render `FIREBASE_SERVICE_ACCOUNT_JSON` (never commit).
+1. In your Supabase project: **Authentication → Sign-in method** → enable **Email** and (optionally) **Google**. For Google, see the full walkthrough in [docs/GOOGLE_AUTH.md](docs/GOOGLE_AUTH.md) — it needs matching config in both Google Cloud Console and the Supabase dashboard.
+2. **Project Settings → API**: copy the Project URL and anon/publishable key into the frontend env (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`) and the Project URL into the backend env (`SUPABASE_URL`).
 
 ### Auth flow
 
-1. User signs up / signs in on the frontend (Firebase SDK).
-2. Frontend calls `POST /api/auth/sync` with `Authorization: Bearer <Firebase ID token>`.
-3. Backend verifies token with Firebase Admin and creates/updates the Prisma `User` row.
-4. All protected API routes verify the same Firebase ID token and load `req.user` from the database.
+1. User signs up / signs in on the frontend (`@supabase/supabase-js`, including the Google OAuth redirect).
+2. Frontend calls `POST /api/auth/sync` with `Authorization: Bearer <Supabase access token>`.
+3. Backend verifies the token locally against Supabase's published JWKS (no secret key needed) and creates/updates the Prisma `User` row, keyed on `authUid`.
+4. All protected API routes verify the same token and load `req.user` from the database.
 
 ### Admin users
 
@@ -131,7 +129,7 @@ UPDATE "User" SET role = 'ADMIN' WHERE email = 'admin@example.com';
 ## API routes
 
 - `GET /health` — Render health check (200 OK)
-- `POST /api/auth/sync` — Register/link user after Firebase sign-in
+- `POST /api/auth/sync` — Register/link user after Supabase sign-in
 - `GET /api/auth/me` — Current app user (protected)
 - Public listings: `GET /api/properties` (published only)
 - Agent: `/api/listings/drafts/*`
@@ -147,7 +145,7 @@ Backend allows `FRONTEND_URL` and `*.vercel.app` preview deployments. Set `FRONT
 
 ## Test auth end-to-end
 
-1. Sign up on `/signup` (Firebase + sync).
-2. Open browser devtools → Application; confirm Firebase session.
+1. Sign up on `/signup` (Supabase sign-up + `/api/auth/sync`).
+2. Open browser devtools → Application → Local Storage; confirm a Supabase session is stored.
 3. Create a listing as agent → `POST /api/listings/drafts` should return 201 (not 401).
-4. In Supabase Table Editor, confirm a `User` row with `firebaseUid` set.
+4. In Supabase Table Editor, confirm a `User` row with `authUid` set.

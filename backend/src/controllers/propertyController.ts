@@ -18,12 +18,15 @@ const publicInclude = {
 
 export const getProperties = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { type, city, minPrice, maxPrice, bedrooms, bathrooms } = req.query;
+    const { type, city, minPrice, maxPrice, bedrooms, bathrooms, propertyType } = req.query;
 
     const filters: Record<string, unknown> = { status: 'PUBLISHED' };
 
     if (type) filters.type = type as string;
     if (city) filters.city = { contains: city as string, mode: 'insensitive' };
+    // propertyType is free text on the model, but listings are created from a fixed
+    // picker, so match the whole value rather than a substring ("House" vs "Townhouse").
+    if (propertyType) filters.propertyType = { equals: propertyType as string, mode: 'insensitive' };
 
     if (minPrice || maxPrice) {
       const priceFilter: Record<string, number> = {};

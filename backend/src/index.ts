@@ -8,6 +8,7 @@ import agentRoutes from './routes/agentRoutes.js';
 import investmentRoutes from './routes/investmentRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import listingRoutes from './routes/listingRoutes.js';
+import dealRoutes from './routes/dealRoutes.js';
 
 dotenv.config();
 
@@ -59,6 +60,7 @@ app.use('/api/agents', agentRoutes);
 app.use('/api/investments', investmentRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/listings', listingRoutes);
+app.use('/api/deals', dealRoutes);
 
 app.get('/', (_req, res) => {
   res.send('Property On Set API is running');

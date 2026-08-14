@@ -12,6 +12,7 @@ import { getApiBaseUrl } from '@/lib/config';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import MortgageCalculator from '@/components/MortgageCalculator';
+import DealPanel from '@/components/DealPanel';
 import mapboxgl from 'mapbox-gl';
 
 export default function PropertyDetailPage() {
@@ -447,6 +448,13 @@ export default function PropertyDetailPage() {
                 <p className="text-xs font-bold uppercase tracking-widest">Verified by Property On Set</p>
               </div>
             </div>
+
+            <DealPanel
+              propertyId={String(id)}
+              agentUserId={property.agent?.user?.id}
+              defaultAmount={property.price ?? 0}
+              defaultCurrency={property.currency || 'USD'}
+            />
 
             <MortgageCalculator />
 

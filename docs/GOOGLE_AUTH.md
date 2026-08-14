@@ -1,51 +1,64 @@
-# Google Sign-In / Sign-Up
+# Google Sign-In
 
-## What was added
+## How it works
 
-- **Backend:** `POST /api/auth/google` with body `{ "idToken": "<Google JWT>" }`. Verifies the token with Google and creates or links a user, then returns your app JWT (same as email/password login).
-- **Database:** `User.password` is optional; `User.googleId` stores the Google subject id.
-- **Frontend:** “Continue with Google” on **Login** and **Signup** (`@react-oauth/google`).
+Auth is handled entirely by **Supabase Auth** — there is no custom Google OAuth
+code in this repo. The frontend calls
+`supabase.auth.signInWithOAuth({ provider: 'google' })`
+(`frontend/src/contexts/AuthContext.tsx`), Supabase runs the OAuth exchange
+with Google, and redirects back to `/auth/callback`, which waits for the
+session and routes the user by role. The backend never talks to Google
+directly — it verifies the Supabase-issued access token against Supabase's
+JWKS (`backend/src/utils/supabaseAuth.ts`).
 
-## Google Cloud setup
+> An earlier version of this doc described a custom `@react-oauth/google` +
+> `POST /api/auth/google` flow. That code no longer exists — don't follow
+> old instructions referencing `GOOGLE_CLIENT_ID` / `NEXT_PUBLIC_GOOGLE_CLIENT_ID`
+> env vars or a backend `/api/auth/google` route.
 
-1. Open [Google Cloud Console](https://console.cloud.google.com/) → select or create a project.
-2. **APIs & Services** → **OAuth consent screen** → configure (External or Internal) and add scopes **email**, **profile**, **openid**.
-3. **Credentials** → **Create credentials** → **OAuth client ID** → **Web application**.
-4. **Authorized JavaScript origins** (required for the Sign-In button):
-   - `http://localhost:3000`
-   - Add your production URL when you deploy (e.g. `https://yourdomain.com`).
-5. Copy the **Client ID** (looks like `xxxxx.apps.googleusercontent.com`).
+## One-time setup
 
-## Environment variables
+### 1. Google Cloud Console
 
-Use the **same** OAuth 2.0 Web Client ID in both places:
+1. [console.cloud.google.com](https://console.cloud.google.com) → **APIs & Services** → **OAuth consent screen** → configure, add scopes `email`, `profile`, `openid`. Add yourself as a test user if the app is still in Testing mode.
+2. **Credentials** → **Create credentials** → **OAuth client ID** → **Web application**.
+3. **Authorized JavaScript origins** (optional but recommended): your app URLs, e.g. `http://localhost:3000` and your production domain.
+4. **Authorized redirect URIs** — this is the one that actually matters for Supabase-managed OAuth, and the step most setups get wrong:
+   ```
+   https://<YOUR-PROJECT-REF>.supabase.co/auth/v1/callback
+   ```
+   This is a **Supabase** URL, not your app's URL. Find `<YOUR-PROJECT-REF>` in Supabase → **Project Settings** → **API** → Project URL.
+5. Copy the **Client ID** and **Client Secret**.
 
-| Variable | Where |
-|----------|--------|
-| `GOOGLE_CLIENT_ID` | Backend (server verifies tokens) |
-| `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | Frontend (renders the Google button) |
+### 2. Supabase Dashboard
 
-Add them to `.env` at the project root (Docker Compose loads them) or to `frontend/.env.local` for local Next dev.
+1. **Authentication** → **Providers** → **Google** → toggle **Enabled**.
+2. Paste the Google **Client ID** and **Client Secret** from step 1.
+3. **Authentication** → **URL Configuration** → **Redirect URLs** → add:
+   - `http://localhost:3000/auth/callback` (local dev)
+   - `https://your-app.vercel.app/auth/callback` (production)
 
-Restart the API and Next after changing env.
+   Supabase refuses the final redirect back into the app if the URL isn't on this list — this is the single most common cause of "it redirects to Google fine, then fails on the way back."
 
-## Database migration
+### 3. App environment variables
 
-After pulling changes, apply the Prisma migration (includes nullable `password` and `googleId`):
+Only Supabase's own project URL and public key are needed — both are safe to expose to the browser:
 
-```bash
-cd backend
-npx prisma migrate deploy
-```
+| Variable | Where | Value |
+|---|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | `frontend/.env.local` (and Vercel) | Supabase → Project Settings → API → Project URL |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | `frontend/.env.local` (and Vercel) | Supabase → Project Settings → API → anon/publishable key |
+| `SUPABASE_URL` | `backend/.env` (and Render) | Same Project URL — used to fetch the JWKS that verifies tokens |
 
-## Behavior
-
-- **New Google user:** Creates a `USER` account with no password; sign-in is via Google only unless you add a password flow later.
-- **Existing email/password user, same Google email:** First Google sign-in **links** `googleId` to the existing account.
-- **Login with password** for a Google-only account: API returns *“This account uses Google sign-in”*.
+Restart `npm run dev` (frontend and backend) after changing env vars.
 
 ## Troubleshooting
 
-- **Button shows “Set NEXT_PUBLIC_GOOGLE_CLIENT_ID”:** Set the public env var and rebuild/restart the frontend.
-- **“Google sign-in is not configured”:** Set `GOOGLE_CLIENT_ID` on the backend.
-- **“Invalid Google token” / 400:** Origins mismatch → add your exact app URL (scheme + host + port) to **Authorized JavaScript origins** in Google Cloud.
+| Symptom | Likely cause |
+|---|---|
+| "Supabase is not configured" error the instant you click the button | `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` missing from `frontend/.env.local` |
+| Redirects to Google, signs in, then bounces back to `/login` with an error banner | `/auth/callback` surfaces Supabase/Google's `error_description` verbatim — read it, it's usually accurate |
+| Google shows **"Error 400: redirect_uri_mismatch"** | The Authorized redirect URI in Google Cloud Console isn't exactly `https://<project-ref>.supabase.co/auth/v1/callback` |
+| Callback page error mentions the redirect/site URL | The exact `/auth/callback` URL you're testing from isn't in Supabase's **Redirect URLs** allow-list |
+| Email/password login works but Google doesn't | Google isn't toggled on under Supabase **Authentication → Providers**, or the Client ID/Secret there is stale (regenerated in Google Cloud Console since) |
+| Google sign-in completes but every API call 401s afterward | Backend's `SUPABASE_URL` is missing or points at a different Supabase project than the frontend's `NEXT_PUBLIC_SUPABASE_URL` |

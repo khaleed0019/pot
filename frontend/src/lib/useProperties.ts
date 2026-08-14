@@ -16,6 +16,7 @@ export type Property = {
   bedrooms?: number;
   bathrooms?: number;
   squareFootage?: number;
+  propertyType?: string;
   images?: string | string[];
   type: ListingType;
   lat?: number;
@@ -48,6 +49,7 @@ export type PropertyFilters = {
   maxPrice?: string;
   bedrooms?: string;
   bathrooms?: string;
+  propertyType?: string;
 };
 
 /** Shared loader for published listings of a given type. */

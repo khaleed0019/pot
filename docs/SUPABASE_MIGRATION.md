@@ -61,10 +61,10 @@ psql "YOUR_SUPABASE_DIRECT_URL" -f backup.sql
 
 ## 5. Promote admin user
 
-After first Firebase sign-in, set role in Supabase SQL editor:
+After first sign-in, set role in Supabase SQL editor:
 
 ```sql
 UPDATE "User" SET role = 'ADMIN' WHERE email = 'you@example.com';
 ```
 
-Link `firebaseUid` is set automatically on `/api/auth/sync`.
+The `authUid` link (Supabase Auth user id) is set automatically on `/api/auth/sync`.

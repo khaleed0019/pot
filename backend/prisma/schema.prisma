@@ -29,6 +29,7 @@ model User {
   agentProfile  Agent?
   reviewedListings Property[] @relation("ReviewedBy")
   propertyHistory  PropertyHistory[]
+  clientDeals   Deal[]    @relation("ClientDeals")
 }
 
 enum Role {
@@ -48,6 +49,7 @@ model Agent {
   reviews      Review[]
   listings     Property[] @relation("AgentProperties")
   createdAt    DateTime  @default(now())
+  deals        Deal[]
 }
 
 model Property {
@@ -114,6 +116,7 @@ model Property {
   investmentData  InvestmentDetail?
   history         PropertyHistory[]
   leads           PropertyLead[]
+  deals           Deal[]
 
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
@@ -206,4 +209,67 @@ model Favorite {
   createdAt   DateTime @default(now())
 
   @@unique([userId, propertyId])
+}
+
+enum PaymentPlan {
+  FULL
+  INSTALLMENT
+}
+
+enum DealStatus {
+  PROPOSED
+  COUNTERED
+  AGREED
+  CANCELLED
+}
+
+enum DealParty {
+  AGENT
+  CLIENT
+}
+
+/// A price + payment-plan agreement between an agent and a client on a
+/// property. No money moves here — this is a mutual-consent record: whoever
+/// last changed the terms is "proposing", and the deal only becomes AGREED
+/// once both sides have confirmed the exact same terms.
+model Deal {
+  id              String        @id @default(uuid())
+
+  propertyId      String
+  property        Property      @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  agentId         String
+  agent           Agent         @relation(fields: [agentId], references: [id])
+
+  clientId        String
+  client          User          @relation("ClientDeals", fields: [clientId], references: [id])
+
+  amount          Float
+  currency        String        @default("USD")
+  paymentPlan     PaymentPlan   @default(FULL)
+  installments    Installment[]
+
+  status          DealStatus    @default(PROPOSED)
+  lastProposedBy  DealParty
+  agentAgreed     Boolean       @default(false)
+  clientAgreed    Boolean       @default(false)
+  agreedAt        DateTime?
+
+  note            String?
+
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([propertyId, clientId])
+}
+
+model Installment {
+  id        String    @id @default(uuid())
+  dealId    String
+  deal      Deal      @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  seq       Int
+  amount    Float
+  dueDate   DateTime
+  paid      Boolean   @default(false)
+  paidAt    DateTime?
 }
