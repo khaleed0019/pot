@@ -11,11 +11,19 @@
  * Idempotent: every listing gets a deterministic UUID derived from its index,
  * so re-running upserts instead of duplicating.
  *
+ * Photos come from ./photoPool.ts at a fixed offset (12), since seed.ts's 12
+ * listings already claimed indices 0-11 — every photo in the shared pool is
+ * assigned to at most one listing across both seed scripts combined.
+ *
  * Run with: npm run seed:listings
  */
 import { PrismaClient, type ListingType } from '@prisma/client';
+import { EXTERIOR_PHOTOS, INTERIOR_PHOTOS } from './photoPool.js';
 
 const prisma = new PrismaClient();
+
+// seed.ts uses EXTERIOR_PHOTOS[0..11] / INTERIOR_PHOTOS[0..11] for its 12 listings.
+const PHOTO_OFFSET = 12;
 
 // Deterministic PRNG (mulberry32) so re-running produces the exact same
 // listings instead of a new random set each time.
@@ -119,39 +127,6 @@ const AMENITY_POOL = [
   'Updated Kitchen', 'Fireplace', 'Smart Thermostat', 'Storage Unit', 'EV Charger',
 ] as const;
 
-const EXTERIOR_PHOTOS = [
-  'https://images.unsplash.com/photo-1613977257363-707ba9348227?auto=format&fit=crop&q=80&w=2070',
-  'https://images.unsplash.com/photo-1570129477492-45c003edd2be?auto=format&fit=crop&q=80&w=2070',
-  'https://images.unsplash.com/photo-1605276374104-dee2a0ed3cd6?auto=format&fit=crop&q=80&w=2070',
-  'https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?auto=format&fit=crop&q=80&w=2070',
-  'https://images.unsplash.com/photo-1523217582562-09d0def993a6?auto=format&fit=crop&q=80&w=2070',
-  'https://images.unsplash.com/photo-1523192193543-6e7296d960e4?auto=format&fit=crop&q=80&w=2070',
-  'https://images.unsplash.com/photo-1583608205776-bfd35f0d9f83?auto=format&fit=crop&q=80&w=2070',
-  'https://images.unsplash.com/photo-1484154218962-a197022b5858?auto=format&fit=crop&q=80&w=2070',
-  'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=2070',
-  'https://images.unsplash.com/photo-1598928506311-c55ded91a20c?auto=format&fit=crop&q=80&w=2070',
-  'https://images.unsplash.com/photo-1598928636135-d146006ff4be?auto=format&fit=crop&q=80&w=2070',
-  'https://images.unsplash.com/photo-1568605114967-8130f3a36994?auto=format&fit=crop&q=80&w=2070', // existing IMAGES.modern
-  'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80&w=2070', // existing IMAGES.tower
-];
-const APARTMENT_EXTERIOR_PHOTOS = [
-  'https://images.unsplash.com/photo-1592595896616-c37162298647?auto=format&fit=crop&q=80&w=2070',
-  'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80&w=2070',
-];
-const INTERIOR_PHOTOS = [
-  'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=2070',
-  'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&q=80&w=2070',
-  'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&q=80&w=2070',
-  'https://images.unsplash.com/photo-1600585152915-d208bec867a1?auto=format&fit=crop&q=80&w=2070',
-  'https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?auto=format&fit=crop&q=80&w=2070',
-  'https://images.unsplash.com/photo-1554995207-c18c203602cb?auto=format&fit=crop&q=80&w=2070',
-  'https://images.unsplash.com/photo-1615529182904-14819c35db37?auto=format&fit=crop&q=80&w=2070',
-  'https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?auto=format&fit=crop&q=80&w=2070',
-  'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&q=80&w=2070',
-  'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80&w=2070', // existing IMAGES.villa
-  'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&q=80&w=2070', // existing IMAGES.loft
-  'https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&q=80&w=2070', // existing IMAGES.condo
-];
 
 const AGENTS = [
   // Same person/email/id as the original seed.ts owner — reused rather than
@@ -204,7 +179,7 @@ async function main() {
     ...Array.from({ length: 100 }, (_, i) => ({ seq: i, type: 'RENT' as const })),
   ];
 
-  for (const job of jobs) {
+  for (const [globalIndex, job] of jobs.entries()) {
     const idSuffix = job.type === 'SALE' ? 'a' : 'b';
     const id = `55555555-5555-4555-8555-${idSuffix}${String(job.seq).padStart(11, '0')}`;
 
@@ -231,8 +206,10 @@ async function main() {
     const price = job.type === 'SALE' ? Math.round(rawPrice / 1000) * 1000 : Math.round(rawPrice / 25) * 25;
 
     const agent = pick(agents);
-    const exteriorPool = propertyType === 'Apartment' || propertyType === 'Studio' ? APARTMENT_EXTERIOR_PHOTOS : EXTERIOR_PHOTOS;
-    const images = [pick(exteriorPool), pick(INTERIOR_PHOTOS)];
+    // Sequential, non-repeating index into the shared pool — guarantees every
+    // listing across this whole seed gets a photo no other listing uses.
+    const photoIndex = PHOTO_OFFSET + globalIndex;
+    const images = [EXTERIOR_PHOTOS[photoIndex], INTERIOR_PHOTOS[photoIndex]];
     const amenities = Array.from({ length: int(3, 6) }, () => pick(AMENITY_POOL)).filter(
       (v, i, arr) => arr.indexOf(v) === i,
     );

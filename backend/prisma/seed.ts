@@ -1,4 +1,5 @@
 import { PrismaClient, ListingType } from '@prisma/client';
+import { EXTERIOR_PHOTOS, INTERIOR_PHOTOS } from './photoPool.js';
 
 const prisma = new PrismaClient();
 
@@ -10,20 +11,6 @@ const AGENT_ID = '22222222-2222-4222-8222-222222222222';
 // Supabase identity by email on first sign-in and preserves the ADMIN role, so
 // signing in with this Google account grants admin access.
 const ADMIN_EMAIL = process.env.SEED_ADMIN_EMAIL ?? 'propertyonset@gmail.com';
-
-const IMAGES = {
-  modern:
-    'https://images.unsplash.com/photo-1568605114967-8130f3a36994?auto=format&fit=crop&q=80&w=2070',
-  villa:
-    'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80&w=2070',
-  loft: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&q=80&w=2070',
-  condo:
-    'https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&q=80&w=2070',
-  cabin:
-    'https://images.unsplash.com/photo-1449158743715-0a90ebb6d2d8?auto=format&fit=crop&q=80&w=2070',
-  tower:
-    'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80&w=2070',
-};
 
 type Investment = { roi: number; rentalYield: number; marketTrend: string; description: string };
 
@@ -76,7 +63,7 @@ const properties: Seed[] = [
     lng: -122.4331,
     neighborhood: 'Noe Valley',
     amenities: ['Garden', 'Fireplace', 'Hardwood Floors', 'Garage', 'Smart Thermostat'],
-    images: [IMAGES.villa, IMAGES.modern],
+    images: [EXTERIOR_PHOTOS[0], INTERIOR_PHOTOS[0]],
     isFeatured: true,
     parkingSpaces: 2,
   },
@@ -100,7 +87,7 @@ const properties: Seed[] = [
     lng: -118.3819,
     neighborhood: 'Hollywood Hills',
     amenities: ['Pool', 'Home Theater', 'Wine Cellar', 'Security System', 'EV Charger'],
-    images: [IMAGES.modern, IMAGES.villa],
+    images: [EXTERIOR_PHOTOS[1], INTERIOR_PHOTOS[1]],
     isFeatured: true,
     parkingSpaces: 3,
   },
@@ -124,7 +111,7 @@ const properties: Seed[] = [
     lng: -122.3376,
     neighborhood: 'Green Lake',
     amenities: ['Front Porch', 'Basement', 'Fenced Yard', 'Heat Pump'],
-    images: [IMAGES.cabin, IMAGES.loft],
+    images: [EXTERIOR_PHOTOS[2], INTERIOR_PHOTOS[2]],
     parkingSpaces: 1,
   },
   {
@@ -147,7 +134,7 @@ const properties: Seed[] = [
     lng: -123.1223,
     neighborhood: 'Coal Harbour',
     amenities: ['Concierge', 'Gym', 'Balcony', 'Marina View', 'Storage Locker'],
-    images: [IMAGES.tower, IMAGES.condo],
+    images: [EXTERIOR_PHOTOS[3], INTERIOR_PHOTOS[3]],
     parkingSpaces: 1,
     serviceCharge: 640,
   },
@@ -173,7 +160,7 @@ const properties: Seed[] = [
     lng: -122.6844,
     neighborhood: 'Pearl District',
     amenities: ['Roof Deck', 'Exposed Brick', 'In-unit Laundry', 'Pet Friendly'],
-    images: [IMAGES.loft, IMAGES.modern],
+    images: [EXTERIOR_PHOTOS[4], INTERIOR_PHOTOS[4]],
     furnishing: 'Unfurnished',
     parkingSpaces: 1,
   },
@@ -197,7 +184,7 @@ const properties: Seed[] = [
     lng: -97.7503,
     neighborhood: 'Downtown',
     amenities: ['Rooftop Pool', 'Coworking Lounge', 'Gym', 'Concierge', 'Pet Spa'],
-    images: [IMAGES.tower, IMAGES.condo],
+    images: [EXTERIOR_PHOTOS[5], INTERIOR_PHOTOS[5]],
     furnishing: 'Unfurnished',
     parkingSpaces: 1,
     serviceCharge: 185,
@@ -222,7 +209,7 @@ const properties: Seed[] = [
     lng: -104.9782,
     neighborhood: 'Capitol Hill',
     amenities: ['Private Patio', 'Attached Garage', 'Central Air', 'Dishwasher'],
-    images: [IMAGES.condo, IMAGES.cabin],
+    images: [EXTERIOR_PHOTOS[6], INTERIOR_PHOTOS[6]],
     furnishing: 'Unfurnished',
     parkingSpaces: 2,
   },
@@ -248,7 +235,7 @@ const properties: Seed[] = [
     lng: -80.1300,
     neighborhood: 'South Beach',
     amenities: ['Beach Access', 'WiFi', 'Self Check-in', 'Air Conditioning', 'Linens Included'],
-    images: [IMAGES.condo, IMAGES.modern],
+    images: [EXTERIOR_PHOTOS[7], INTERIOR_PHOTOS[7]],
     furnishing: 'Fully Furnished',
   },
   {
@@ -271,7 +258,7 @@ const properties: Seed[] = [
     lng: -119.9772,
     neighborhood: 'Heavenly Valley',
     amenities: ['Hot Tub', 'Wood Stove', 'Ski Storage', 'WiFi', 'Mountain View'],
-    images: [IMAGES.cabin, IMAGES.villa],
+    images: [EXTERIOR_PHOTOS[8], INTERIOR_PHOTOS[8]],
     furnishing: 'Fully Furnished',
     parkingSpaces: 2,
   },
@@ -297,7 +284,7 @@ const properties: Seed[] = [
     lng: -112.0740,
     neighborhood: 'Midtown',
     amenities: ['On-site Laundry', 'Covered Parking', 'Gated Entry'],
-    images: [IMAGES.tower, IMAGES.condo],
+    images: [EXTERIOR_PHOTOS[9], INTERIOR_PHOTOS[9]],
     isFeatured: true,
     investment: {
       roi: 11.4,
@@ -327,7 +314,7 @@ const properties: Seed[] = [
     lng: -86.7869,
     neighborhood: 'The Gulch',
     amenities: ['Street Frontage', 'NNN Leases', 'Rear Parking', 'Elevator'],
-    images: [IMAGES.modern, IMAGES.tower],
+    images: [EXTERIOR_PHOTOS[10], INTERIOR_PHOTOS[10]],
     investment: {
       roi: 9.8,
       rentalYield: 6.5,
@@ -356,7 +343,7 @@ const properties: Seed[] = [
     lng: -80.8431,
     neighborhood: 'Steele Creek',
     amenities: ['New Construction', 'Attached Garages', 'Single Manager', 'Warranty Coverage'],
-    images: [IMAGES.villa, IMAGES.cabin],
+    images: [EXTERIOR_PHOTOS[11], INTERIOR_PHOTOS[11]],
     investment: {
       roi: 8.9,
       rentalYield: 6.1,
