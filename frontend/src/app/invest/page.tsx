@@ -6,6 +6,45 @@ import { TrendingUp, DollarSign, PieChart, Activity, MapPin, ChevronRight, Star,
 import PropertiesMap from '@/components/PropertiesMap';
 import { firstImage, useProperties } from '@/lib/useProperties';
 
+const TESTIMONIALS = [
+  {
+    name: 'Marcus R.',
+    location: 'Denver, CO',
+    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=200&h=200',
+    portfolioValue: '$340,000',
+    returnLabel: '+14.2% appreciation',
+    quote:
+      "Bought my first duplex through Property On Set two years ago. The rental yield data was spot on, and I've since added two more units to my portfolio.",
+  },
+  {
+    name: 'Priya N.',
+    location: 'Charlotte, NC',
+    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=200&h=200',
+    portfolioValue: '$98,500',
+    returnLabel: '+11.8% return',
+    quote:
+      "The build-to-rent listing paid for itself faster than my advisor projected. Now I check the map for new listings every week.",
+  },
+  {
+    name: 'Devon K.',
+    location: 'Seattle, WA',
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200&h=200',
+    portfolioValue: '$212,000',
+    returnLabel: '+6.1% cash-on-cash',
+    quote:
+      'Turnkey management made this my first hands-off rental. Property On Set handled everything from due diligence to close.',
+  },
+  {
+    name: 'Elena F.',
+    location: 'Nashville, TN',
+    avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=200&h=200',
+    portfolioValue: '$156,000',
+    returnLabel: '+9.4% rental yield',
+    quote:
+      'Diversified out of my 401k into two mixed-use properties. The market trend reports made the decision easy.',
+  },
+] as const;
+
 export default function InvestPage() {
   const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid');
   const { properties, loading, error } = useProperties('INVESTMENT');
@@ -255,6 +294,56 @@ export default function InvestPage() {
                 Join our Investor Network
               </button>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Investor Testimonials */}
+      <section className="py-24 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-extrabold text-secondary mb-6">
+              What Our Investors Say
+            </h2>
+            <p className="text-xl text-gray-500">
+              12,500+ active investors. Real portfolios, real returns.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {TESTIMONIALS.map((t) => (
+              <div
+                key={t.name}
+                className="bg-white rounded-[32px] p-8 shadow-xl border border-gray-100 flex flex-col"
+              >
+                <div className="flex items-center space-x-4 mb-6">
+                  <img
+                    src={t.avatar}
+                    alt={t.name}
+                    className="w-14 h-14 rounded-full object-cover shadow-md"
+                  />
+                  <div>
+                    <p className="font-extrabold text-secondary">{t.name}</p>
+                    <p className="text-sm text-gray-400 font-medium">{t.location}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 mb-6">
+                  <span className="text-xl font-extrabold text-primary">{t.portfolioValue}</span>
+                  <span className="bg-green-50 text-green-600 text-xs font-bold px-3 py-1 rounded-full">
+                    {t.returnLabel}
+                  </span>
+                </div>
+
+                <p className="text-gray-600 italic leading-relaxed mb-6 flex-1">&ldquo;{t.quote}&rdquo;</p>
+
+                <div className="flex gap-1">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Star key={i} className="h-4 w-4 text-yellow-500 fill-current" />
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
