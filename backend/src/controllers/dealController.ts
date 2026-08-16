@@ -71,7 +71,11 @@ export const createDeal = async (req: AuthRequest, res: Response): Promise<void>
       finalClientId = userId;
     }
 
-    if (finalClientId === property.agentId) {
+    // property.agentId is an Agent.id, not a User.id, so comparing it directly
+    // against finalClientId (always a User.id) can never match — that dead
+    // check let an agent set clientId to their own user id with no error.
+    // The actual condition to catch is the agent proposing to themselves.
+    if (proposerParty === 'AGENT' && finalClientId === userId) {
       res.status(400).json({ message: 'The agent cannot be the client on their own listing' });
       return;
     }

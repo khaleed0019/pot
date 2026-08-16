@@ -42,6 +42,30 @@ const storage = createCloudinaryStorage({
   },
 });
 
-const upload = multer({ storage: storage });
+const IMAGE_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
+
+const upload = multer({
+  storage,
+  // No limits previously — any authenticated user could upload arbitrarily
+  // large or non-image files (up to 12 per request per the route's
+  // .array('images', 12)), an easy cost/storage abuse vector against
+  // Cloudinary. 8MB comfortably covers real photos; reject everything else
+  // by MIME type before it ever reaches Cloudinary.
+  limits: { fileSize: 8 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    if (IMAGE_MIME_TYPES.has(file.mimetype)) {
+      cb(null, true);
+      return;
+    }
+    // `expose` marks this safe to show verbatim to the client — see the
+    // global error handler in index.ts, which otherwise replaces every
+    // error message with a generic one.
+    const err = Object.assign(new Error('Only JPEG, PNG, WEBP, or GIF images are allowed'), {
+      status: 400,
+      expose: true,
+    });
+    cb(err);
+  },
+});
 
 export default upload;

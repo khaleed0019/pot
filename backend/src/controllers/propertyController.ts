@@ -12,7 +12,12 @@ import {
 import { sendServerError } from '../utils/errorResponse.js';
 
 const publicInclude = {
-  agent: { include: { user: true } },
+  // `include: { user: true }` returns every User column, including the
+  // password hash and Supabase authUid, to every anonymous visitor hitting
+  // this public listing endpoint. Neither is currently populated for any
+  // seeded user, but that's luck, not a guarantee — narrow to the fields the
+  // frontend actually renders (agent card name/photo/id).
+  agent: { include: { user: { select: { id: true, name: true, profileImage: true } } } },
   investmentData: true,
 };
 

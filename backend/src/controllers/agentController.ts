@@ -46,9 +46,13 @@ export const getAgentById = async (req: Request, res: Response): Promise<void> =
     const agent = await prisma.agent.findUnique({
       where: { id },
       include: {
-        user: true,
+        // Bare `user: true`/`include: { user: true }` returns every column,
+        // including password (hash) and authUid — narrow to what a public
+        // agent profile actually needs. Reviewers get even less: they never
+        // opted into being publicly contactable the way an agent did.
+        user: { select: { id: true, name: true, email: true, profileImage: true } },
         listings: true,
-        reviews: { include: { user: true } },
+        reviews: { include: { user: { select: { id: true, name: true, profileImage: true } } } },
       },
     });
 
