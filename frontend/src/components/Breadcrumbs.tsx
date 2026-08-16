@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { ChevronRight } from 'lucide-react';
 import { getSiteUrl } from '@/lib/site';
+import { safeJsonLd } from '@/lib/jsonLd';
 
 export type Crumb = { label: string; href?: string };
 
@@ -22,7 +23,7 @@ export default function Breadcrumbs({ items }: { items: Crumb[] }) {
       <script
         type="application/ld+json"
         // eslint-disable-next-line react/no-danger
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }}
       />
       <ol className="flex items-center flex-wrap gap-1 text-gray-500">
         {items.map((item, i) => (

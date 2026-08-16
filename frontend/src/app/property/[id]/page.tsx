@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { getApiBaseUrl } from '@/lib/config';
 import { firstImage } from '@/lib/propertyShared';
+import { safeJsonLd } from '@/lib/jsonLd';
 import PropertyDetailContent from '@/components/PropertyDetailContent';
 
 type PropertyForMeta = {
@@ -96,7 +97,7 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
         <script
           type="application/ld+json"
           // eslint-disable-next-line react/no-danger
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+          dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }}
         />
       )}
       <PropertyDetailContent />

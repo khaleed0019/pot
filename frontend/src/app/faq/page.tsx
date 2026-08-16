@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { HelpCircle } from 'lucide-react';
+import { safeJsonLd } from '@/lib/jsonLd';
 
 export const metadata: Metadata = {
   title: 'Frequently Asked Questions',
@@ -46,7 +47,7 @@ export default function FaqPage() {
       <script
         type="application/ld+json"
         // eslint-disable-next-line react/no-danger
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(faqJsonLd) }}
       />
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">

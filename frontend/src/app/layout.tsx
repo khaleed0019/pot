@@ -6,6 +6,7 @@ import Footer from "@/components/Footer";
 import Providers from "@/components/Providers";
 import StickyMobileCta from "@/components/StickyMobileCta";
 import { getSiteUrl } from "@/lib/site";
+import { safeJsonLd } from "@/lib/jsonLd";
 
 const SITE_NAME = "Property On Set";
 const SITE_DESCRIPTION =
@@ -56,7 +57,7 @@ export default function RootLayout({
         <script
           type="application/ld+json"
           // eslint-disable-next-line react/no-danger
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+          dangerouslySetInnerHTML={{ __html: safeJsonLd(organizationJsonLd) }}
         />
       </head>
       <body className="font-sans antialiased" style={{ fontFamily: "'Inter', sans-serif" }}>
