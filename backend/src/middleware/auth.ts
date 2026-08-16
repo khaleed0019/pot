@@ -7,6 +7,7 @@ export interface AuthRequest extends Request {
     id: string;
     role: 'USER' | 'AGENT' | 'ADMIN';
     authUid: string;
+    suspended: boolean;
   };
 }
 
@@ -36,6 +37,7 @@ async function resolveUserFromToken(token: string) {
     id: user.id,
     role: user.role as 'USER' | 'AGENT' | 'ADMIN',
     authUid,
+    suspended: user.suspended,
   };
 }
 
@@ -49,7 +51,9 @@ export const optionalAuth = (req: AuthRequest, res: Response, next: NextFunction
     try {
       const token = authHeader.split(' ')[1];
       const user = await resolveUserFromToken(token);
-      if (user) req.user = user;
+      // Suspended visitors fall back to anonymous here rather than erroring —
+      // this middleware guards public-ish routes (property detail, leads).
+      if (user && !user.suspended) req.user = user;
       next();
     } catch {
       next();
@@ -71,6 +75,10 @@ export const requireAuth = (req: AuthRequest, res: Response, next: NextFunction)
         res.status(401).json({
           message: 'User not registered. Call POST /api/auth/sync after signing in.',
         });
+        return;
+      }
+      if (user.suspended) {
+        res.status(403).json({ message: 'Your account has been suspended.' });
         return;
       }
       req.user = user;

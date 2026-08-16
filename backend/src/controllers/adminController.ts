@@ -217,7 +217,7 @@ export const deleteProperty = async (req: AuthRequest, res: Response): Promise<v
 export const manageUsers = async (_req: AuthRequest, res: Response): Promise<void> => {
   try {
     const users = await prisma.user.findMany({
-      select: { id: true, email: true, name: true, role: true, createdAt: true },
+      select: { id: true, email: true, name: true, role: true, suspended: true, createdAt: true },
     });
     res.status(200).json(users);
   } catch (error: unknown) {
@@ -266,7 +266,7 @@ export const updateUserRole = async (req: AuthRequest, res: Response): Promise<v
     const user = await prisma.user.update({
       where: { id },
       data: { role },
-      select: { id: true, email: true, name: true, role: true, createdAt: true },
+      select: { id: true, email: true, name: true, role: true, suspended: true, createdAt: true },
     });
 
     if (role === 'AGENT') {
@@ -280,6 +280,114 @@ export const updateUserRole = async (req: AuthRequest, res: Response): Promise<v
     res.status(200).json(user);
   } catch (error: unknown) {
     sendServerError(res, 'updateUserRole', error);
+  }
+};
+
+/**
+ * Suspend or unsuspend an account. Reversible: blocks sign-in/API access
+ * (checked in the auth middleware) without touching their listings or deals,
+ * unlike deleteUser. Same self/last-admin guards as updateUserRole.
+ */
+export const updateUserSuspension = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const suspended = (req.body as { suspended?: unknown })?.suspended;
+    if (typeof suspended !== 'boolean') {
+      res.status(400).json({ message: '"suspended" must be true or false' });
+      return;
+    }
+
+    const target = await prisma.user.findUnique({ where: { id } });
+    if (!target) {
+      res.status(404).json({ message: 'User not found' });
+      return;
+    }
+
+    if (target.id === req.user!.id) {
+      res.status(400).json({ message: 'You cannot suspend your own account' });
+      return;
+    }
+
+    if (suspended && target.role === 'ADMIN') {
+      const activeAdmins = await prisma.user.count({ where: { role: 'ADMIN', suspended: false } });
+      if (activeAdmins <= 1) {
+        res.status(400).json({ message: 'Cannot suspend the only remaining admin' });
+        return;
+      }
+    }
+
+    const user = await prisma.user.update({
+      where: { id },
+      data: { suspended },
+      select: { id: true, email: true, name: true, role: true, suspended: true, createdAt: true },
+    });
+
+    res.status(200).json(user);
+  } catch (error: unknown) {
+    sendServerError(res, 'updateUserSuspension', error);
+  }
+};
+
+/**
+ * Permanently delete an account. Unlike suspension this is irreversible, so it
+ * refuses outright if the account (or its agent profile) still owns listings,
+ * deals, or reviews rather than silently cascading through someone's
+ * portfolio — reassign or delete those first, or use suspend instead.
+ */
+export const deleteUser = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+
+    const target = await prisma.user.findUnique({
+      where: { id },
+      include: { agentProfile: true },
+    });
+    if (!target) {
+      res.status(404).json({ message: 'User not found' });
+      return;
+    }
+
+    if (target.id === req.user!.id) {
+      res.status(400).json({ message: 'You cannot delete your own account' });
+      return;
+    }
+
+    if (target.role === 'ADMIN') {
+      const admins = await prisma.user.count({ where: { role: 'ADMIN' } });
+      if (admins <= 1) {
+        res.status(400).json({ message: 'Cannot delete the only remaining admin' });
+        return;
+      }
+    }
+
+    const [ownedCount, agentListingCount, dealCount] = await Promise.all([
+      prisma.property.count({ where: { ownerId: id } }),
+      target.agentProfile ? prisma.property.count({ where: { agentId: target.agentProfile.id } }) : 0,
+      target.agentProfile
+        ? prisma.deal.count({ where: { agentId: target.agentProfile.id } })
+        : prisma.deal.count({ where: { clientId: id } }),
+    ]);
+
+    if (ownedCount > 0 || agentListingCount > 0 || dealCount > 0) {
+      res.status(409).json({
+        message:
+          `Cannot delete: this account still has ${ownedCount} owned listing(s), ` +
+          `${agentListingCount} agent listing(s), and ${dealCount} deal(s). ` +
+          'Reassign or remove those first, or suspend the account instead.',
+      });
+      return;
+    }
+
+    await prisma.$transaction(async (tx) => {
+      if (target.agentProfile) {
+        await tx.agent.delete({ where: { id: target.agentProfile!.id } });
+      }
+      await tx.user.delete({ where: { id } });
+    });
+
+    res.status(200).json({ message: 'User deleted' });
+  } catch (error: unknown) {
+    sendServerError(res, 'deleteUser', error);
   }
 };
 

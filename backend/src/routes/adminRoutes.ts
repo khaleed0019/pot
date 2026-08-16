@@ -2,6 +2,7 @@ import express from 'express';
 import {
   approveProperty,
   deleteProperty,
+  deleteUser,
   getAgentAnalytics,
   getAllPropertiesAdmin,
   getPropertyAdminById,
@@ -10,6 +11,7 @@ import {
   requestChanges,
   updatePropertyStatus,
   updateUserRole,
+  updateUserSuspension,
 } from '../controllers/adminController.js';
 import { requireAuth, requireAdmin } from '../middleware/auth.js';
 
@@ -25,5 +27,7 @@ router.delete('/properties/:id', requireAuth, requireAdmin, deleteProperty);
 router.get('/analytics/agents', requireAuth, requireAdmin, getAgentAnalytics);
 router.get('/users', requireAuth, requireAdmin, manageUsers);
 router.patch('/users/:id/role', requireAuth, requireAdmin, updateUserRole);
+router.patch('/users/:id/suspend', requireAuth, requireAdmin, updateUserSuspension);
+router.delete('/users/:id', requireAuth, requireAdmin, deleteUser);
 
 export default router;

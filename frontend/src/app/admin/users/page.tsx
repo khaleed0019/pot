@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, RefreshCcw, ShieldCheck, UserCog } from 'lucide-react';
+import { ArrowLeft, Ban, RefreshCcw, ShieldCheck, Trash2, UserCog } from 'lucide-react';
 import { apiFetch } from '@/lib/api';
 import RequireRole from '@/components/RequireRole';
 import { useAuth, type AppUser } from '@/contexts/AuthContext';
@@ -12,6 +12,7 @@ type Row = {
   email: string;
   name: string | null;
   role: AppUser['role'];
+  suspended: boolean;
   createdAt: string;
 };
 
@@ -68,6 +69,52 @@ function UsersAdmin() {
     }
   };
 
+  const toggleSuspend = async (user: Row) => {
+    const next = !user.suspended;
+    if (
+      next &&
+      !window.confirm(`Suspend ${user.name || user.email}? They won't be able to sign in until unsuspended.`)
+    ) {
+      return;
+    }
+    setSavingId(user.id);
+    setNotice(null);
+    setError(null);
+    try {
+      const updated = await apiFetch(`/admin/users/${user.id}/suspend`, {
+        method: 'PATCH',
+        body: JSON.stringify({ suspended: next }),
+      });
+      setUsers((prev) => prev.map((u) => (u.id === updated.id ? { ...u, suspended: updated.suspended } : u)));
+      setNotice(`${updated.email} is now ${updated.suspended ? 'suspended' : 'active'}.`);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Could not update suspension.');
+    } finally {
+      setSavingId(null);
+    }
+  };
+
+  const remove = async (user: Row) => {
+    // Permanent, and the server refuses if the account still owns listings/deals —
+    // confirm up front since a successful delete can't be undone from here.
+    if (!window.confirm(`Permanently delete ${user.name || user.email}? This cannot be undone.`)) {
+      return;
+    }
+    setSavingId(user.id);
+    setNotice(null);
+    setError(null);
+    try {
+      await apiFetch(`/admin/users/${user.id}`, { method: 'DELETE' });
+      setUsers((prev) => prev.filter((u) => u.id !== user.id));
+      setNotice(`${user.email} was deleted.`);
+    } catch (e: unknown) {
+      // Surfaces the server's "still has N listings" message when it applies.
+      setError(e instanceof Error ? e.message : 'Could not delete user.');
+    } finally {
+      setSavingId(null);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 py-16">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -119,6 +166,11 @@ function UsersAdmin() {
                           You
                         </span>
                       )}
+                      {u.suspended && (
+                        <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-lg bg-red-50 text-red-600 border border-red-200">
+                          Suspended
+                        </span>
+                      )}
                     </div>
                     <p className="text-sm text-gray-500 truncate">{u.email}</p>
                     <p className="text-xs text-gray-400 mt-1">
@@ -146,6 +198,24 @@ function UsersAdmin() {
                             </option>
                           ))}
                         </select>
+                        <button
+                          onClick={() => toggleSuspend(u)}
+                          disabled={savingId === u.id}
+                          className={`flex items-center gap-1 px-4 py-2 rounded-2xl text-sm font-bold border disabled:opacity-50 ${
+                            u.suspended
+                              ? 'bg-green-50 border-green-100 text-green-700 hover:bg-green-100'
+                              : 'bg-white border-amber-100 text-amber-600 hover:bg-amber-50'
+                          }`}
+                        >
+                          <Ban className="h-4 w-4" /> {u.suspended ? 'Unsuspend' : 'Suspend'}
+                        </button>
+                        <button
+                          onClick={() => remove(u)}
+                          disabled={savingId === u.id}
+                          className="flex items-center gap-1 bg-white border border-red-100 text-red-600 px-4 py-2 rounded-2xl text-sm font-bold hover:bg-red-50 disabled:opacity-50"
+                        >
+                          <Trash2 className="h-4 w-4" /> Delete
+                        </button>
                       </>
                     )}
                   </div>
