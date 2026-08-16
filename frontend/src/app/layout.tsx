@@ -27,6 +27,9 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
   },
+  verification: {
+    google: "3SwBRXhBK9FEER1djn5nhX2QH_XIqxdCzMeTN2scokQ",
+  },
 };
 
 const organizationJsonLd = {
