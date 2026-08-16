@@ -2,6 +2,7 @@ import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import { Star } from 'lucide-react';
 import ListingsExplorer from '@/components/ListingsExplorer';
+import { StaggerGrid, StaggerItem } from '@/components/motion/StaggerGrid';
 
 export const metadata: Metadata = {
   title: 'Homes for Sale',
@@ -60,9 +61,9 @@ export default function BuyPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <StaggerGrid className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {TESTIMONIALS.map((t) => (
-              <div
+              <StaggerItem
                 key={t.name}
                 className="bg-gray-50 rounded-[32px] p-8 shadow-sm border border-gray-100 flex flex-col"
               >
@@ -89,9 +90,9 @@ export default function BuyPage() {
                     <Star key={i} className="h-4 w-4 text-yellow-500 fill-current" />
                   ))}
                 </div>
-              </div>
+              </StaggerItem>
             ))}
-          </div>
+          </StaggerGrid>
         </div>
       </section>
     </Suspense>

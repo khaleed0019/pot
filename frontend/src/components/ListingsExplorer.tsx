@@ -6,6 +6,7 @@ import { Search, Map, List, ChevronDown, SlidersHorizontal } from 'lucide-react'
 import PropertyCard from '@/components/PropertyCard';
 import PropertiesMap from '@/components/PropertiesMap';
 import Breadcrumbs from '@/components/Breadcrumbs';
+import { StaggerGrid, StaggerItem } from '@/components/motion/StaggerGrid';
 import { PROPERTY_TYPES } from '@/lib/listing';
 import { firstImage, useProperties, type ListingType } from '@/lib/useProperties';
 
@@ -381,24 +382,25 @@ export default function ListingsExplorer({
           ) : properties.length === 0 && !error ? (
             <p className="text-gray-500 font-bold">No listings available yet.</p>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <StaggerGrid className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {properties.map((property) => (
-                <PropertyCard
-                  key={property.id}
-                  id={property.id}
-                  title={property.title}
-                  price={property.price}
-                  address={property.address}
-                  city={property.city}
-                  state={property.state}
-                  beds={property.bedrooms}
-                  baths={property.bathrooms}
-                  sqft={property.squareFootage}
-                  image={firstImage(property.images)}
-                  type={property.type}
-                />
+                <StaggerItem key={property.id}>
+                  <PropertyCard
+                    id={property.id}
+                    title={property.title}
+                    price={property.price}
+                    address={property.address}
+                    city={property.city}
+                    state={property.state}
+                    beds={property.bedrooms}
+                    baths={property.bathrooms}
+                    sqft={property.squareFootage}
+                    image={firstImage(property.images)}
+                    type={property.type}
+                  />
+                </StaggerItem>
               ))}
-            </div>
+            </StaggerGrid>
           )
         ) : (
           <PropertiesMap properties={properties} loading={loading} error={error} height="600px" />

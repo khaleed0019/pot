@@ -1,3 +1,6 @@
+'use client';
+
+import { motion } from 'framer-motion';
 import { MapPin, Star, Heart } from 'lucide-react';
 import Link from 'next/link';
 import type { ListingType } from '@/lib/useProperties';
@@ -42,7 +45,11 @@ const PropertyCard = ({
   const location = [address, city, state].filter(Boolean).join(', ');
 
   return (
-    <div className="bg-white rounded-3xl overflow-hidden shadow-lg group hover:shadow-2xl transition-all border border-gray-100">
+    <motion.div
+      className="bg-white rounded-3xl overflow-hidden shadow-lg group hover:shadow-2xl transition-shadow border border-gray-100"
+      whileHover={{ y: -8 }}
+      transition={{ type: 'spring', stiffness: 300, damping: 22 }}
+    >
       <div className="relative h-64 overflow-hidden">
         <img
           src={image}
@@ -96,7 +103,7 @@ const PropertyCard = ({
           </Link>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 

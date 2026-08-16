@@ -2,6 +2,8 @@ import { Home, DollarSign, TrendingUp, Key, MapPin, Star } from 'lucide-react';
 import Link from 'next/link';
 import HeroSearch from '@/components/HeroSearch';
 import HomeSaleMap from '@/components/HomeSaleMap';
+import FadeIn from '@/components/motion/FadeIn';
+import { StaggerGrid, StaggerItem } from '@/components/motion/StaggerGrid';
 
 export default function HomePage() {
   return (
@@ -16,48 +18,59 @@ export default function HomePage() {
           />
         </div>
         <div className="relative z-10 text-center text-white px-4 max-w-4xl">
-          <h1 className="text-4xl md:text-6xl font-extrabold mb-6 drop-shadow-lg">
-            Find Your Dream Property in the USA
-          </h1>
-          <p className="text-xl md:text-2xl mb-10 text-gray-200 drop-shadow-md">
-            Buy, Rent, Sell, or Invest in premium real estate with Property On Set.
-          </p>
-          
-          <HeroSearch />
+          <FadeIn y={16}>
+            <h1 className="text-4xl md:text-6xl font-extrabold mb-6 drop-shadow-lg">
+              Find Your Dream Property in the USA
+            </h1>
+          </FadeIn>
+          <FadeIn y={16} delay={0.12}>
+            <p className="text-xl md:text-2xl mb-10 text-gray-200 drop-shadow-md">
+              Buy, Rent, Sell, or Invest in premium real estate with Property On Set.
+            </p>
+          </FadeIn>
+          <FadeIn y={16} delay={0.24}>
+            <HeroSearch />
+          </FadeIn>
         </div>
       </section>
 
       {/* Categories */}
       <section className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-            <Link href="/buy" className="group p-8 rounded-3xl border border-gray-100 hover:shadow-2xl transition-all hover:-translate-y-2">
-              <div className="bg-blue-50 w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:bg-primary transition-colors">
-                <Home className="h-10 w-10 text-primary group-hover:text-white" />
-              </div>
-              <h3 className="text-2xl font-bold mb-4">Buy a Home</h3>
-              <p className="text-gray-500 mb-6">Explore thousands of homes for sale across New York, Los Angeles, and Miami.</p>
-              <span className="text-primary font-bold group-hover:underline">Browse Listings &rarr;</span>
-            </Link>
+          <StaggerGrid className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+            <StaggerItem>
+              <Link href="/buy" className="group block p-8 rounded-3xl border border-gray-100 hover:shadow-2xl transition-all hover:-translate-y-2">
+                <div className="bg-blue-50 w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:bg-primary transition-colors">
+                  <Home className="h-10 w-10 text-primary group-hover:text-white" />
+                </div>
+                <h3 className="text-2xl font-bold mb-4">Buy a Home</h3>
+                <p className="text-gray-500 mb-6">Explore thousands of homes for sale across New York, Los Angeles, and Miami.</p>
+                <span className="text-primary font-bold group-hover:underline">Browse Listings &rarr;</span>
+              </Link>
+            </StaggerItem>
 
-            <Link href="/rent" className="group p-8 rounded-3xl border border-gray-100 hover:shadow-2xl transition-all hover:-translate-y-2">
-              <div className="bg-green-50 w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:bg-green-600 transition-colors">
-                <Key className="h-10 w-10 text-green-600 group-hover:text-white" />
-              </div>
-              <h3 className="text-2xl font-bold mb-4">Rent a Home</h3>
-              <p className="text-gray-500 mb-6">Find the perfect rental apartment or house in your favorite city.</p>
-              <span className="text-green-600 font-bold group-hover:underline">Search Rentals &rarr;</span>
-            </Link>
+            <StaggerItem>
+              <Link href="/rent" className="group block p-8 rounded-3xl border border-gray-100 hover:shadow-2xl transition-all hover:-translate-y-2">
+                <div className="bg-green-50 w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:bg-green-600 transition-colors">
+                  <Key className="h-10 w-10 text-green-600 group-hover:text-white" />
+                </div>
+                <h3 className="text-2xl font-bold mb-4">Rent a Home</h3>
+                <p className="text-gray-500 mb-6">Find the perfect rental apartment or house in your favorite city.</p>
+                <span className="text-green-600 font-bold group-hover:underline">Search Rentals &rarr;</span>
+              </Link>
+            </StaggerItem>
 
-            <Link href="/sell" className="group p-8 rounded-3xl border border-gray-100 hover:shadow-2xl transition-all hover:-translate-y-2">
-              <div className="bg-purple-50 w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:bg-purple-600 transition-colors">
-                <DollarSign className="h-10 w-10 text-purple-600 group-hover:text-white" />
-              </div>
-              <h3 className="text-2xl font-bold mb-4">Sell Your Home</h3>
-              <p className="text-gray-500 mb-6">List your property and reach millions of potential buyers today.</p>
-              <span className="text-purple-600 font-bold group-hover:underline">Get Started &rarr;</span>
-            </Link>
-          </div>
+            <StaggerItem>
+              <Link href="/sell" className="group block p-8 rounded-3xl border border-gray-100 hover:shadow-2xl transition-all hover:-translate-y-2">
+                <div className="bg-purple-50 w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:bg-purple-600 transition-colors">
+                  <DollarSign className="h-10 w-10 text-purple-600 group-hover:text-white" />
+                </div>
+                <h3 className="text-2xl font-bold mb-4">Sell Your Home</h3>
+                <p className="text-gray-500 mb-6">List your property and reach millions of potential buyers today.</p>
+                <span className="text-purple-600 font-bold group-hover:underline">Get Started &rarr;</span>
+              </Link>
+            </StaggerItem>
+          </StaggerGrid>
         </div>
       </section>
 
@@ -72,9 +85,9 @@ export default function HomePage() {
             <Link href="/buy" className="text-primary font-bold hover:underline">View All &rarr;</Link>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <StaggerGrid className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="bg-white rounded-3xl overflow-hidden shadow-lg group hover:shadow-2xl transition-all">
+              <StaggerItem key={i} className="bg-white rounded-3xl overflow-hidden shadow-lg group hover:shadow-2xl transition-all">
                 <div className="relative h-64 overflow-hidden">
                   <img 
                     src={`https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&q=80&w=2074`} 
@@ -117,9 +130,9 @@ export default function HomePage() {
                     </Link>
                   </div>
                 </div>
-              </div>
+              </StaggerItem>
             ))}
-          </div>
+          </StaggerGrid>
         </div>
       </section>
 
@@ -144,7 +157,7 @@ export default function HomePage() {
         </div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-            <div>
+            <FadeIn>
               <h2 className="text-4xl md:text-5xl font-extrabold mb-8 leading-tight">
                 Unlock High-Yield Real Estate Investments
               </h2>
@@ -174,12 +187,12 @@ export default function HomePage() {
               <Link href="/invest" className="inline-block bg-primary text-white px-12 py-5 rounded-2xl font-bold text-lg hover:bg-blue-700 transition-all transform hover:scale-105">
                 Explore Investment Portfolio
               </Link>
-            </div>
-            <div className="relative">
+            </FadeIn>
+            <FadeIn delay={0.15} className="relative">
               <div className="bg-white/10 backdrop-blur-xl p-8 rounded-[40px] border border-white/20">
-                <img 
-                  src="https://images.unsplash.com/photo-1460472178825-e5240623abe5?auto=format&fit=crop&q=80&w=2070" 
-                  alt="Investment Chart" 
+                <img
+                  src="https://images.unsplash.com/photo-1460472178825-e5240623abe5?auto=format&fit=crop&q=80&w=2070"
+                  alt="Investment Chart"
                   className="rounded-3xl shadow-2xl mb-8"
                 />
                 <div className="grid grid-cols-3 gap-4 text-center">
@@ -197,7 +210,7 @@ export default function HomePage() {
                   </div>
                 </div>
               </div>
-            </div>
+            </FadeIn>
           </div>
         </div>
       </section>
@@ -205,10 +218,10 @@ export default function HomePage() {
       {/* CTA Section */}
       <section className="py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="bg-primary rounded-[50px] p-12 md:p-20 text-center text-white relative overflow-hidden">
+          <FadeIn className="bg-primary rounded-[50px] p-12 md:p-20 text-center text-white relative overflow-hidden">
             <div className="absolute -left-20 -top-20 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
             <div className="absolute -right-20 -bottom-20 w-64 h-64 bg-blue-400/20 rounded-full blur-3xl"></div>
-            
+
             <h2 className="text-4xl md:text-5xl font-extrabold mb-8 relative z-10">
               Ready to find your next home?
             </h2>
@@ -223,7 +236,7 @@ export default function HomePage() {
                 Contact an Agent
               </Link>
             </div>
-          </div>
+          </FadeIn>
         </div>
       </section>
     </div>

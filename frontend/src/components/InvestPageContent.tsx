@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { TrendingUp, DollarSign, PieChart, Activity, MapPin, ChevronRight, Star, Map, List } from 'lucide-react';
 import PropertiesMap from '@/components/PropertiesMap';
 import Breadcrumbs from '@/components/Breadcrumbs';
+import { StaggerGrid, StaggerItem } from '@/components/motion/StaggerGrid';
 import { firstImage, useProperties } from '@/lib/useProperties';
 
 const TESTIMONIALS = [
@@ -312,9 +313,9 @@ export default function InvestPageContent() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <StaggerGrid className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {TESTIMONIALS.map((t) => (
-              <div
+              <StaggerItem
                 key={t.name}
                 className="bg-white rounded-[32px] p-8 shadow-xl border border-gray-100 flex flex-col"
               >
@@ -344,9 +345,9 @@ export default function InvestPageContent() {
                     <Star key={i} className="h-4 w-4 text-yellow-500 fill-current" />
                   ))}
                 </div>
-              </div>
+              </StaggerItem>
             ))}
-          </div>
+          </StaggerGrid>
         </div>
       </section>
     </div>
