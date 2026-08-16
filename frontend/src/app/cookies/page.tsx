@@ -1,4 +1,9 @@
-'use client';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Cookie Policy',
+  description: 'How Property On Set uses cookies and similar technologies.',
+};
 
 export default function CookiesPage() {
   return (

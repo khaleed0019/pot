@@ -19,4 +19,8 @@ body {
   .btn-secondary {
     @apply border border-primary text-primary px-4 py-2 rounded-lg font-medium hover:bg-accent transition-colors;
   }
+  /* Keeps fixed-bottom bars clear of the iOS home indicator. */
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
 }

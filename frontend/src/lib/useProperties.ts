@@ -1,46 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import type { ListingType, Property } from './propertyShared';
 
-export type ListingType = 'SALE' | 'RENT' | 'SHORTLET' | 'INVESTMENT';
-
-export type Property = {
-  id: string;
-  title: string;
-  price?: number;
-  currency?: string;
-  address?: string;
-  city?: string;
-  state?: string;
-  country?: string;
-  bedrooms?: number;
-  bathrooms?: number;
-  squareFootage?: number;
-  propertyType?: string;
-  images?: string | string[];
-  type: ListingType;
-  lat?: number;
-  lng?: number;
-  investmentData?: { roi?: number; rentalYield?: number; marketTrend?: string };
-};
-
-export const FALLBACK_IMAGE =
-  'https://images.unsplash.com/photo-1568605114967-8130f3a36994?auto=format&fit=crop&q=80&w=2070';
-
-/** The API returns `images` as either a JSON string or an array depending on route. */
-export function firstImage(images: Property['images']): string {
-  const list = Array.isArray(images)
-    ? images
-    : (() => {
-        try {
-          const parsed = JSON.parse(images || '[]');
-          return Array.isArray(parsed) ? parsed : [];
-        } catch {
-          return [];
-        }
-      })();
-  return list[0] || FALLBACK_IMAGE;
-}
+// Re-exported for existing client call sites — see propertyShared.ts for why
+// server components (generateMetadata etc.) must import these directly from
+// there instead of from this 'use client' file.
+export type { ListingType, Property } from './propertyShared';
+export { FALLBACK_IMAGE, firstImage } from './propertyShared';
 
 /** Server-supported filters on GET /properties. */
 export type PropertyFilters = {

@@ -1,4 +1,9 @@
-'use client';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Terms of Service',
+  description: 'The terms and conditions for using Property On Set.',
+};
 
 export default function TermsPage() {
   return (

@@ -1,4 +1,9 @@
-'use client';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Disclaimer',
+  description: 'Important disclaimers about listings and information on Property On Set.',
+};
 
 export default function DisclaimerPage() {
   return (

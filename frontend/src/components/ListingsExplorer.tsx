@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Search, Map, List, ChevronDown, SlidersHorizontal } from 'lucide-react';
 import PropertyCard from '@/components/PropertyCard';
 import PropertiesMap from '@/components/PropertiesMap';
+import Breadcrumbs from '@/components/Breadcrumbs';
 import { PROPERTY_TYPES } from '@/lib/listing';
 import { firstImage, useProperties, type ListingType } from '@/lib/useProperties';
 
@@ -364,6 +365,7 @@ export default function ListingsExplorer({
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: heading }]} />
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-extrabold text-secondary">{heading}</h1>
           <p className="text-gray-500 font-bold">

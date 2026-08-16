@@ -1,5 +1,11 @@
+import type { Metadata } from 'next';
 import { Search, MapPin, Phone, Mail, Star, Users, Briefcase, Award } from 'lucide-react';
 import Link from 'next/link';
+
+export const metadata: Metadata = {
+  title: 'Find an Agent',
+  description: 'Connect with experienced real estate agents to help you buy, sell, rent, or invest.',
+};
 
 const AGENTS_DATA = [
   {

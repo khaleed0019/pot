@@ -1,6 +1,12 @@
 import { Suspense } from 'react';
+import type { Metadata } from 'next';
 import { Star } from 'lucide-react';
 import ListingsExplorer from '@/components/ListingsExplorer';
+
+export const metadata: Metadata = {
+  title: 'Homes for Sale',
+  description: 'Browse homes for sale across the USA — filter by price, beds, baths, and home type, or explore listings on the map.',
+};
 
 const TESTIMONIALS = [
   {

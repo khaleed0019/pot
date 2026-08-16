@@ -1,4 +1,9 @@
-'use client';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Privacy Policy',
+  description: 'How Property On Set collects, uses, and protects your information.',
+};
 
 export default function PrivacyPage() {
   return (
