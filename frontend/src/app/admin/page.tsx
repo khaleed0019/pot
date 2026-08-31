@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
   BarChart3,
+  Bitcoin,
   CheckSquare,
   Clock,
   Eye,
@@ -15,6 +16,7 @@ import {
 } from 'lucide-react';
 import { apiFetch } from '@/lib/api';
 import RequireRole from '@/components/RequireRole';
+import { StatTileSkeletonRow } from '@/components/skeletons/StatTileSkeleton';
 import { useAuth } from '@/contexts/AuthContext';
 
 type Counts = {
@@ -96,19 +98,21 @@ function AdminOverview() {
 
         {error && <p className="text-red-500 font-semibold mb-6">{error}</p>}
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-12">
-          {stats.map(({ label, value, icon: Icon, tone }) => (
-            <div key={label} className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm">
-              <div className={`w-10 h-10 rounded-2xl flex items-center justify-center mb-3 ${tone}`}>
-                <Icon className="h-5 w-5" />
+        {loading ? (
+          <StatTileSkeletonRow count={6} className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-12" />
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-12">
+            {stats.map(({ label, value, icon: Icon, tone }) => (
+              <div key={label} className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm">
+                <div className={`w-10 h-10 rounded-2xl flex items-center justify-center mb-3 ${tone}`}>
+                  <Icon className="h-5 w-5" />
+                </div>
+                <p className="text-2xl font-extrabold text-secondary">{(value ?? 0).toLocaleString()}</p>
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mt-1">{label}</p>
               </div>
-              <p className="text-2xl font-extrabold text-secondary">
-                {loading ? '—' : (value ?? 0).toLocaleString()}
-              </p>
-              <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mt-1">{label}</p>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
         {!loading && counts?.pending ? (
           <Link
@@ -151,6 +155,16 @@ function AdminOverview() {
             <h2 className="text-xl font-bold text-secondary mb-2">Agent Analytics</h2>
             <p className="text-gray-500 text-sm">
               Approval rates, leads, views, and top performing agents.
+            </p>
+          </Link>
+          <Link
+            href="/admin/crypto"
+            className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow group"
+          >
+            <Bitcoin className="h-10 w-10 text-primary mb-4 group-hover:scale-110 transition-transform" />
+            <h2 className="text-xl font-bold text-secondary mb-2">Crypto Payments</h2>
+            <p className="text-gray-500 text-sm">
+              Manage BTC/ETH/SOL addresses, review submitted payments, and edit the buying guide.
             </p>
           </Link>
         </div>

@@ -1,10 +1,11 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { Loader2, HandCoins } from 'lucide-react';
+import { HandCoins } from 'lucide-react';
 import RequireRole from '@/components/RequireRole';
 import { useAuth } from '@/contexts/AuthContext';
 import DealCard from '@/components/DealCard';
+import { DealCardSkeletonGrid } from '@/components/skeletons/DealCardSkeleton';
 import { listMyDeals, type Deal } from '@/lib/deals';
 
 function AgentDeals() {
@@ -42,26 +43,25 @@ function AgentDeals() {
         </div>
       </div>
 
-      {loading && (
-        <div className="flex items-center justify-center py-20 text-gray-400">
-          <Loader2 className="h-6 w-6 animate-spin mr-2" /> Loading deals...
-        </div>
-      )}
-      {error && <p className="text-red-500 font-bold">{error}</p>}
+      {error && <p className="text-red-500 font-bold mb-4">{error}</p>}
       {!loading && !error && deals.length === 0 && (
         <p className="text-gray-400 font-bold">No deals yet. They&apos;ll show up here once a client proposes payment terms on one of your listings.</p>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {deals.map((deal) => (
-          <DealCard
-            key={deal.id}
-            deal={deal}
-            userId={appUser?.id}
-            onChange={(updated) => setDeals((prev) => prev.map((d) => (d.id === updated.id ? updated : d)))}
-          />
-        ))}
-      </div>
+      {loading ? (
+        <DealCardSkeletonGrid />
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {deals.map((deal) => (
+            <DealCard
+              key={deal.id}
+              deal={deal}
+              userId={appUser?.id}
+              onChange={(updated) => setDeals((prev) => prev.map((d) => (d.id === updated.id ? updated : d)))}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

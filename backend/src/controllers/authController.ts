@@ -5,15 +5,32 @@ import { claimsToProfile, verifySupabaseToken } from '../utils/supabaseAuth.js';
 import { sendServerError } from '../utils/errorResponse.js';
 
 export const syncUser = async (req: AuthRequest, res: Response): Promise<void> => {
-  try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader?.startsWith('Bearer ')) {
-      res.status(401).json({ message: 'Authorization token missing' });
-      return;
-    }
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) {
+    res.status(401).json({ message: 'Authorization token missing' });
+    return;
+  }
 
+  // Token verification is split into its own try/catch, separate from the DB
+  // work below. Both used to share one catch-all that reported every failure
+  // as 401 "Could not verify your sign-in" — including an ordinary DB
+  // connectivity blip (this project's Supabase pooler is prone to those; see
+  // the DATABASE_URL comment in .env). That's not just a mislabeled error:
+  // the frontend now signs the user out locally on a genuine 401 to clear a
+  // stale/expired token, so collapsing "your token is bad" and "our database
+  // hiccuped" into the same status would sign people out over infra noise
+  // that had nothing to do with their session.
+  let claims: Awaited<ReturnType<typeof verifySupabaseToken>>;
+  try {
     const accessToken = authHeader.split(' ')[1];
-    const claims = await verifySupabaseToken(accessToken);
+    claims = await verifySupabaseToken(accessToken);
+  } catch (error: unknown) {
+    console.error('syncUser: token verification failed', error);
+    res.status(401).json({ message: 'Your session has expired. Please sign in again.' });
+    return;
+  }
+
+  try {
     const { authUid, email, name, profileImage } = claimsToProfile(claims);
     if (!email) {
       res.status(400).json({ message: 'Your account must have an email address' });
@@ -73,10 +90,10 @@ export const syncUser = async (req: AuthRequest, res: Response): Promise<void> =
       },
     });
   } catch (error: unknown) {
-    // The try block also performs DB writes, so the raw message could carry
-    // internal details — keep the client-facing reason generic.
-    console.error('syncUser', error);
-    res.status(401).json({ message: 'Could not verify your sign-in. Please try again.' });
+    // Token already verified above — anything failing here is a DB/infra
+    // problem, not a bad session, so it's a 500 (retry-worthy) not a 401
+    // (sign-in-again-worthy).
+    sendServerError(res, 'syncUser', error);
   }
 };
 

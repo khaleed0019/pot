@@ -55,7 +55,10 @@ async function syncWithBackendApi(accessToken: string, role?: 'USER' | 'AGENT'):
 
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    throw new Error(data.message || 'Failed to sync account with server');
+    // Carries the status so callers can tell "your token is actually bad"
+    // (401 — safe to clear the local session over) apart from a transient
+    // backend/DB hiccup (5xx — the token's still fine, just retry later).
+    throw Object.assign(new Error(data.message || 'Failed to sync account with server'), { status: res.status });
   }
   return data.user as AppUser;
 }
@@ -95,6 +98,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } catch (err) {
           console.error('Failed to sync account with backend', err);
           setAppUser(null);
+          // A 401 here means the backend actually rejected this token as
+          // expired/invalid — the local Supabase session is stale and will
+          // never sync, so clear it. Without this the UI was stuck showing
+          // "Sign Out" (currentUser still set from the stale session) next
+          // to role-gated pages that redirect to login (appUser null): two
+          // different views of "am I signed in?" disagreeing with each
+          // other. Anything else (network error, 5xx from our own DB being
+          // flaky) leaves the session alone — it's not the token's fault,
+          // and signing someone out over an infra blip would be worse than
+          // just retrying next time this runs.
+          if (err instanceof Error && (err as Error & { status?: number }).status === 401) {
+            await supabase.auth.signOut();
+            setCurrentUser(null);
+          }
         }
       } else {
         setAppUser(null);

@@ -205,6 +205,44 @@ export const updatePropertyStatus = async (req: AuthRequest, res: Response): Pro
   }
 };
 
+/**
+ * Sets or clears a listing's discount. `price` — the real, current asking
+ * price every other feature reads (filters, deals, crypto minimum
+ * investment) — is never touched; `originalPrice` is purely the struck-
+ * through "was" figure the discount badge computes its percentage from.
+ * Pass `originalPrice: null` to clear an existing discount.
+ */
+export const updatePropertyDiscount = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { originalPrice } = req.body as { originalPrice: number | null };
+
+    if (originalPrice !== null) {
+      if (typeof originalPrice !== 'number' || !Number.isFinite(originalPrice) || originalPrice <= 0) {
+        res.status(400).json({ message: 'originalPrice must be a positive number, or null to clear the discount' });
+        return;
+      }
+      const existing = await prisma.property.findUnique({ where: { id: req.params.id }, select: { price: true } });
+      if (!existing) {
+        res.status(404).json({ message: 'Property not found' });
+        return;
+      }
+      if (originalPrice <= existing.price) {
+        res.status(400).json({ message: 'originalPrice must be greater than the current price for a discount to make sense' });
+        return;
+      }
+    }
+
+    const property = await prisma.property.update({
+      where: { id: req.params.id },
+      data: { originalPrice },
+      include: listingInclude,
+    });
+    res.status(200).json(formatPropertyResponse(property as never));
+  } catch (error: unknown) {
+    sendServerError(res, 'updatePropertyDiscount', error);
+  }
+};
+
 export const deleteProperty = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     await prisma.property.delete({ where: { id: req.params.id } });

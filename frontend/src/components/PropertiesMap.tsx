@@ -4,6 +4,7 @@ import { useEffect, useId, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import { Map as MapIcon } from 'lucide-react';
 import type { Property } from '@/lib/useProperties';
+import { Skeleton } from '@/components/skeletons/Skeleton';
 
 const US_CENTER: [number, number] = [-98.5795, 39.8283];
 
@@ -100,7 +101,9 @@ export default function PropertiesMap({
       style={{ height }}
     >
       <div id={containerId} className="w-full h-full" />
-      {showOverlay && (
+      {loading && hasToken && !error ? (
+        <Skeleton className="absolute inset-0 rounded-[36px]" />
+      ) : showOverlay ? (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-blue-50/60 text-center p-8 pointer-events-none">
           <MapIcon className="h-16 w-16 text-primary/20 mb-4" />
           {!hasToken ? (
@@ -112,8 +115,6 @@ export default function PropertiesMap({
             </>
           ) : error ? (
             <p className="text-red-500 font-semibold max-w-md">{error}</p>
-          ) : loading ? (
-            <h3 className="text-xl font-extrabold text-secondary">Loading listings...</h3>
           ) : !mapLoaded ? (
             <h3 className="text-xl font-extrabold text-secondary">Loading map...</h3>
           ) : (
@@ -125,7 +126,7 @@ export default function PropertiesMap({
             </>
           )}
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

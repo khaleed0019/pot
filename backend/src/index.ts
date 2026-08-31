@@ -9,8 +9,27 @@ import agentRoutes from './routes/agentRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import listingRoutes from './routes/listingRoutes.js';
 import dealRoutes from './routes/dealRoutes.js';
+import cryptoRoutes from './routes/cryptoRoutes.js';
 
 dotenv.config();
+
+// A malformed/truncated multipart upload (a dropped connection mid-upload, a
+// buggy client, or someone deliberately probing an upload endpoint) can make
+// busboy — multer's internal multipart parser — emit a raw 'error' event on
+// a stream nothing is listening to, deep inside its own stream lifecycle.
+// Node treats an unlistened EventEmitter 'error' as fatal: it throws and
+// kills the whole process. That single bad request then takes the entire
+// API down for every other concurrent user until something restarts it.
+// This is the last line of defense: log it and keep the process alive
+// rather than let one request's parse failure become an outage. It can't
+// guarantee that one in-flight request's connection is cleaned up nicely,
+// but the alternative — the process dying — is strictly worse.
+process.on('uncaughtException', (err) => {
+  console.error('[uncaughtException] kept process alive:', err);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('[unhandledRejection] kept process alive:', reason);
+});
 
 if (!process.env.SUPABASE_URL) {
   console.warn('SUPABASE_URL not set — auth will fail on protected routes');
@@ -60,6 +79,7 @@ app.use('/api/agents', agentRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/listings', listingRoutes);
 app.use('/api/deals', dealRoutes);
+app.use('/api/crypto', cryptoRoutes);
 
 app.get('/', (_req, res) => {
   res.send('Property On Set API is running');

@@ -1,15 +1,20 @@
 'use client';
 
+import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { MapPin, Star, Heart } from 'lucide-react';
+import { Check, Heart, MapPin, Share2, Star } from 'lucide-react';
 import Link from 'next/link';
 import type { ListingType } from '@/lib/useProperties';
+import { discountPercent } from '@/lib/discount';
+import DiscountBadge from '@/components/DiscountBadge';
 
 interface PropertyCardProps {
   id: string;
   title: string;
   /** Numeric fields are optional because the API omits them on incomplete listings. */
   price?: number;
+  /** Struck-through "was" price — only rendered when it's actually higher than `price`. */
+  originalPrice?: number | null;
   address?: string;
   city?: string;
   state?: string;
@@ -33,6 +38,7 @@ const PropertyCard = ({
   id,
   title,
   price,
+  originalPrice,
   address,
   city,
   state,
@@ -43,6 +49,25 @@ const PropertyCard = ({
   type,
 }: PropertyCardProps) => {
   const location = [address, city, state].filter(Boolean).join(', ');
+  const pct = discountPercent(price, originalPrice);
+  const [shared, setShared] = useState(false);
+
+  const share = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const url = `${window.location.origin}/property/${id}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title, url });
+      } catch {
+        // User cancelled the share sheet — not an error.
+      }
+      return;
+    }
+    await navigator.clipboard.writeText(url);
+    setShared(true);
+    setTimeout(() => setShared(false), 2000);
+  };
 
   return (
     <motion.div
@@ -56,10 +81,25 @@ const PropertyCard = ({
           alt={title}
           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
         />
-        <div className="absolute top-4 left-4 bg-primary text-white px-4 py-1 rounded-full text-sm font-bold shadow-lg">
-          {TYPE_LABELS[type] ?? 'For Sale'}
+        <div className="absolute top-4 left-4 flex items-center gap-2">
+          <span className="bg-primary text-white px-4 py-1 rounded-full text-sm font-bold shadow-lg">
+            {TYPE_LABELS[type] ?? 'For Sale'}
+          </span>
+          {pct != null && <DiscountBadge percent={pct} />}
         </div>
         <div className="absolute top-4 right-4 flex space-x-2">
+          <button
+            type="button"
+            onClick={share}
+            title="Share this listing"
+            className="bg-white/90 backdrop-blur-sm p-2 rounded-full cursor-pointer hover:bg-white transition-colors shadow-sm"
+          >
+            {shared ? (
+              <Check className="h-5 w-5 text-green-600" />
+            ) : (
+              <Share2 className="h-5 w-5 text-gray-400 hover:text-primary transition-colors" />
+            )}
+          </button>
           <div className="bg-white/90 backdrop-blur-sm p-2 rounded-full cursor-pointer hover:bg-white transition-colors shadow-sm">
             <Heart className="h-5 w-5 text-gray-400 hover:text-red-500 transition-colors" />
           </div>
@@ -67,10 +107,15 @@ const PropertyCard = ({
       </div>
       <div className="p-6">
         <div className="flex justify-between items-start mb-2">
-          <p className="text-2xl font-extrabold text-primary">
-            {price != null ? `$${price.toLocaleString()}` : 'Price on request'}
-          </p>
-          <div className="flex items-center text-yellow-500 bg-yellow-50 px-2 py-1 rounded-lg">
+          <div className="flex items-baseline gap-2 flex-wrap">
+            <p className="text-2xl font-extrabold text-primary">
+              {price != null ? `$${price.toLocaleString()}` : 'Price on request'}
+            </p>
+            {pct != null && (
+              <p className="text-sm text-gray-400 line-through font-bold">${originalPrice!.toLocaleString()}</p>
+            )}
+          </div>
+          <div className="flex items-center text-yellow-500 bg-yellow-50 px-2 py-1 rounded-lg shrink-0">
             <Star className="h-4 w-4 fill-current mr-1" />
             <span className="text-sm font-bold">4.8</span>
           </div>

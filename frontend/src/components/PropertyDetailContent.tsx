@@ -9,10 +9,14 @@ import {
 } from 'lucide-react';
 import { apiFetch, publicFetch, getAuthHeaders } from '@/lib/api';
 import { getApiBaseUrl } from '@/lib/config';
+import PropertyDetailSkeleton from '@/components/skeletons/PropertyDetailSkeleton';
+import DiscountBadge from '@/components/DiscountBadge';
+import { discountPercent } from '@/lib/discount';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import MortgageCalculator from '@/components/MortgageCalculator';
 import DealPanel from '@/components/DealPanel';
+import CryptoPaymentSection from '@/components/CryptoPaymentSection';
 import Breadcrumbs, { type Crumb } from '@/components/Breadcrumbs';
 import type { ListingType } from '@/lib/useProperties';
 import mapboxgl from 'mapbox-gl';
@@ -162,12 +166,14 @@ export default function PropertyDetailContent() {
     : [];
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center">Loading property...</div>;
+    return <PropertyDetailSkeleton />;
   }
 
   if (error || !property) {
     return <div className="min-h-screen flex items-center justify-center text-red-500 font-bold">{error || 'Property not found'}</div>;
   }
+
+  const priceDiscountPct = discountPercent(property.price, property.originalPrice);
 
   return (
     <div className="bg-white min-h-screen pb-24">
@@ -263,8 +269,9 @@ export default function PropertyDetailContent() {
           ]}
         />
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-16">
-          {/* Main Info */}
-          <div className="lg:col-span-2 space-y-16">
+          {/* Main Info — order-2 on mobile (CTAs before the deep-dive content),
+              lg:order-1 to sit on the left once the grid goes two-column. */}
+          <div className="order-2 lg:order-1 lg:col-span-2 space-y-16">
             <div className="flex flex-wrap gap-8 py-10 border-b border-gray-100">
               <div className="flex items-center space-x-4 bg-gray-50 p-6 rounded-3xl border border-gray-100 flex-1 min-w-[150px]">
                 <div className="bg-primary/10 p-3 rounded-2xl">
@@ -344,17 +351,75 @@ export default function PropertyDetailContent() {
                 )}
               </div>
             </div>
+
+            <DealPanel
+              propertyId={String(id)}
+              agentUserId={property.agent?.user?.id}
+              defaultAmount={property.price ?? 0}
+              defaultCurrency={property.currency || 'USD'}
+            />
+
+            <CryptoPaymentSection
+              propertyId={String(id)}
+              amountUsd={(property.currency || 'USD') === 'USD' ? property.price ?? undefined : undefined}
+            />
+
+            <MortgageCalculator />
+
+            <div className="bg-gradient-to-br from-secondary to-gray-800 rounded-[40px] p-10 text-white relative overflow-hidden">
+              <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-white/5 rounded-full blur-2xl"></div>
+              <div className="relative z-10">
+                <TrendingUp className="h-10 w-10 text-primary mb-6" />
+                <h3 className="text-2xl font-extrabold mb-4">Investment Insight</h3>
+                {property.investmentData ? (
+                  <>
+                    <p className="text-gray-300 font-medium mb-4">
+                      Projected ROI: <span className="font-extrabold">{property.investmentData.roi ?? 'N/A'}%</span>
+                      {property.investmentData.rentalYield ? (
+                        <> · Rental Yield: <span className="font-extrabold">{property.investmentData.rentalYield}%</span></>
+                      ) : null}
+                    </p>
+                    {property.investmentData.marketTrend ? (
+                      <p className="text-gray-200 font-medium mb-8">
+                        Market Trend: <span className="font-extrabold">{property.investmentData.marketTrend}</span>
+                      </p>
+                    ) : (
+                      <p className="text-gray-200 font-medium mb-8">
+                        Investment data available for this listing.
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <p className="text-gray-300 font-medium mb-8">Investment data not available for this listing yet.</p>
+                )}
+                <Link href="/invest" className="inline-block text-primary font-extrabold hover:underline">
+                  View Full Market Report &rarr;
+                </Link>
+              </div>
+            </div>
           </div>
 
-          {/* Sidebar / Contact */}
-          <div className="space-y-10">
-            <div className="bg-white rounded-[40px] shadow-2xl p-10 border border-gray-100 sticky top-32">
+          {/* Sidebar / Contact — order-1 on mobile (primary CTAs stay up top),
+              lg:order-2 to sit on the right once the grid goes two-column. Holds
+              only this one card now: sticky needs to be the sole occupant of its
+              column, otherwise whatever follows it scrolls up and disappears
+              behind it once it "sticks". */}
+          <div className="order-1 lg:order-2">
+            <div className="bg-white rounded-[40px] shadow-2xl p-10 border border-gray-100 lg:sticky lg:top-32">
               <div className="flex justify-between items-end mb-8">
                 <div>
                   <p className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-1">Price</p>
                   <p className="text-4xl font-extrabold text-primary">
                     {property.currency || 'USD'} {(property.price ?? 0).toLocaleString()}
                   </p>
+                  {priceDiscountPct != null && (
+                    <div className="flex items-center gap-2 mt-2">
+                      <p className="text-sm text-gray-400 line-through font-bold">
+                        {property.currency || 'USD'} {property.originalPrice.toLocaleString()}
+                      </p>
+                      <DiscountBadge percent={priceDiscountPct} />
+                    </div>
+                  )}
                 </div>
                 <div className="bg-accent px-4 py-2 rounded-2xl flex items-center text-primary font-bold">
                   <Star className="h-4 w-4 fill-current mr-2" />
@@ -462,47 +527,6 @@ export default function PropertyDetailContent() {
               <div className="mt-8 pt-8 border-t border-gray-100 flex items-center justify-center space-x-3 text-gray-400">
                 <ShieldCheck className="h-5 w-5" />
                 <p className="text-xs font-bold uppercase tracking-widest">Verified by Property On Set</p>
-              </div>
-            </div>
-
-            <DealPanel
-              propertyId={String(id)}
-              agentUserId={property.agent?.user?.id}
-              defaultAmount={property.price ?? 0}
-              defaultCurrency={property.currency || 'USD'}
-            />
-
-            <MortgageCalculator />
-
-            <div className="bg-gradient-to-br from-secondary to-gray-800 rounded-[40px] p-10 text-white relative overflow-hidden">
-              <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-white/5 rounded-full blur-2xl"></div>
-              <div className="relative z-10">
-                <TrendingUp className="h-10 w-10 text-primary mb-6" />
-                <h3 className="text-2xl font-extrabold mb-4">Investment Insight</h3>
-                {property.investmentData ? (
-                  <>
-                    <p className="text-gray-300 font-medium mb-4">
-                      Projected ROI: <span className="font-extrabold">{property.investmentData.roi ?? 'N/A'}%</span>
-                      {property.investmentData.rentalYield ? (
-                        <> · Rental Yield: <span className="font-extrabold">{property.investmentData.rentalYield}%</span></>
-                      ) : null}
-                    </p>
-                    {property.investmentData.marketTrend ? (
-                      <p className="text-gray-200 font-medium mb-8">
-                        Market Trend: <span className="font-extrabold">{property.investmentData.marketTrend}</span>
-                      </p>
-                    ) : (
-                      <p className="text-gray-200 font-medium mb-8">
-                        Investment data available for this listing.
-                      </p>
-                    )}
-                  </>
-                ) : (
-                  <p className="text-gray-300 font-medium mb-8">Investment data not available for this listing yet.</p>
-                )}
-                <Link href="/invest" className="inline-block text-primary font-extrabold hover:underline">
-                  View Full Market Report &rarr;
-                </Link>
               </div>
             </div>
           </div>

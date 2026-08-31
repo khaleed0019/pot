@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Search, Map, List, ChevronDown, SlidersHorizontal } from 'lucide-react';
 import PropertyCard from '@/components/PropertyCard';
 import PropertiesMap from '@/components/PropertiesMap';
+import { PropertyCardSkeletonGrid } from '@/components/skeletons/PropertyCardSkeleton';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import { StaggerGrid, StaggerItem } from '@/components/motion/StaggerGrid';
 import { PROPERTY_TYPES } from '@/lib/listing';
@@ -378,7 +379,7 @@ export default function ListingsExplorer({
 
         {viewMode === 'grid' ? (
           loading ? (
-            <p className="text-gray-500 font-bold">Loading listings...</p>
+            <PropertyCardSkeletonGrid />
           ) : properties.length === 0 && !error ? (
             <p className="text-gray-500 font-bold">No listings available yet.</p>
           ) : (
@@ -389,6 +390,7 @@ export default function ListingsExplorer({
                     id={property.id}
                     title={property.title}
                     price={property.price}
+                    originalPrice={property.originalPrice}
                     address={property.address}
                     city={property.city}
                     state={property.state}
