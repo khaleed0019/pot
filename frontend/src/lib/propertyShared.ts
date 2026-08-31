@@ -13,6 +13,8 @@ export type Property = {
   id: string;
   title: string;
   price?: number;
+  /** Struck-through "was" price — set only when this listing has an active discount. */
+  originalPrice?: number | null;
   currency?: string;
   address?: string;
   city?: string;
@@ -26,7 +28,13 @@ export type Property = {
   type: ListingType;
   lat?: number;
   lng?: number;
-  investmentData?: { roi?: number; rentalYield?: number; marketTrend?: string };
+  investmentData?: {
+    roi?: number;
+    rentalYield?: number;
+    marketTrend?: string;
+    minInvestment?: number;
+    fundedPercent?: number;
+  };
 };
 
 export const FALLBACK_IMAGE =

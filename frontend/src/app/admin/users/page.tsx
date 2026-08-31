@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ArrowLeft, Ban, RefreshCcw, ShieldCheck, Trash2, UserCog } from 'lucide-react';
 import { apiFetch } from '@/lib/api';
 import RequireRole from '@/components/RequireRole';
+import { ListRowSkeletonStack } from '@/components/skeletons/ListRowSkeleton';
 import { useAuth, type AppUser } from '@/contexts/AuthContext';
 
 type Row = {
@@ -141,7 +142,7 @@ function UsersAdmin() {
         {notice && <p className="text-green-600 font-semibold mb-4">{notice}</p>}
 
         {loading ? (
-          <p className="text-gray-500 font-bold">Loading users...</p>
+          <ListRowSkeletonStack leading="none" />
         ) : users.length === 0 ? (
           <p className="text-gray-500 font-bold">No users yet.</p>
         ) : (

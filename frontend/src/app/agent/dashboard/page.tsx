@@ -4,6 +4,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { apiFetch } from '@/lib/api';
 import RequireRole from '@/components/RequireRole';
+import { StatTileSkeletonRow } from '@/components/skeletons/StatTileSkeleton';
+import { ListRowSkeletonStack } from '@/components/skeletons/ListRowSkeleton';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   AlertTriangle,
@@ -148,17 +150,21 @@ function AgentDashboard() {
 
         {error && <p className="text-red-600 font-semibold mb-6">{error}</p>}
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-12">
-          {cards.map(({ label, value, icon: Icon }) => (
-            <div key={label} className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm">
-              <Icon className="h-6 w-6 text-primary mb-3" />
-              <p className="text-2xl font-extrabold text-secondary">
-                {loading || value === undefined ? '—' : typeof value === 'number' ? value.toLocaleString() : value}
-              </p>
-              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">{label}</p>
-            </div>
-          ))}
-        </div>
+        {loading ? (
+          <StatTileSkeletonRow count={6} className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-12" />
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-12">
+            {cards.map(({ label, value, icon: Icon }) => (
+              <div key={label} className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm">
+                <Icon className="h-6 w-6 text-primary mb-3" />
+                <p className="text-2xl font-extrabold text-secondary">
+                  {value === undefined ? '—' : typeof value === 'number' ? value.toLocaleString() : value}
+                </p>
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">{label}</p>
+              </div>
+            ))}
+          </div>
+        )}
 
         <div className="flex flex-wrap gap-2 mb-6">
           {FILTERS.map((f) => (
@@ -177,7 +183,7 @@ function AgentDashboard() {
         </div>
 
         {loading ? (
-          <p className="text-gray-500 font-bold">Loading your listings...</p>
+          <ListRowSkeletonStack leading="none" />
         ) : visible.length === 0 ? (
           <div className="bg-white rounded-3xl border border-gray-100 p-12 text-center">
             <FileText className="h-12 w-12 text-gray-200 mx-auto mb-4" />

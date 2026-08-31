@@ -1,5 +1,12 @@
 import { PrismaClient, ListingType } from '@prisma/client';
-import { EXTERIOR_PHOTOS, INTERIOR_PHOTOS } from './photoPool.js';
+import {
+  EXTERIOR_AFFORDABLE,
+  EXTERIOR_LUXURY,
+  EXTERIOR_MID,
+  INTERIOR_AFFORDABLE,
+  INTERIOR_LUXURY,
+  INTERIOR_MID,
+} from './photoPool.js';
 
 const prisma = new PrismaClient();
 
@@ -12,7 +19,16 @@ const AGENT_ID = '22222222-2222-4222-8222-222222222222';
 // signing in with this Google account grants admin access.
 const ADMIN_EMAIL = process.env.SEED_ADMIN_EMAIL ?? 'propertyonset@gmail.com';
 
-type Investment = { roi: number; rentalYield: number; marketTrend: string; description: string };
+type Investment = {
+  roi: number;
+  rentalYield: number;
+  marketTrend: string;
+  description: string;
+  /** Fractional buy-in shown on the invest page instead of the full asset price. */
+  minInvestment: number;
+  /** 0-100 — how much of this deal's raise is filled. */
+  fundedPercent: number;
+};
 
 type Seed = {
   id: string;
@@ -63,7 +79,7 @@ const properties: Seed[] = [
     lng: -122.4331,
     neighborhood: 'Noe Valley',
     amenities: ['Garden', 'Fireplace', 'Hardwood Floors', 'Garage', 'Smart Thermostat'],
-    images: [EXTERIOR_PHOTOS[0], INTERIOR_PHOTOS[0]],
+    images: [EXTERIOR_LUXURY[0], INTERIOR_LUXURY[0]],
     isFeatured: true,
     parkingSpaces: 2,
   },
@@ -87,7 +103,7 @@ const properties: Seed[] = [
     lng: -118.3819,
     neighborhood: 'Hollywood Hills',
     amenities: ['Pool', 'Home Theater', 'Wine Cellar', 'Security System', 'EV Charger'],
-    images: [EXTERIOR_PHOTOS[1], INTERIOR_PHOTOS[1]],
+    images: [EXTERIOR_LUXURY[1], INTERIOR_LUXURY[1]],
     isFeatured: true,
     parkingSpaces: 3,
   },
@@ -111,7 +127,7 @@ const properties: Seed[] = [
     lng: -122.3376,
     neighborhood: 'Green Lake',
     amenities: ['Front Porch', 'Basement', 'Fenced Yard', 'Heat Pump'],
-    images: [EXTERIOR_PHOTOS[2], INTERIOR_PHOTOS[2]],
+    images: [EXTERIOR_MID[0], INTERIOR_MID[0]],
     parkingSpaces: 1,
   },
   {
@@ -134,7 +150,7 @@ const properties: Seed[] = [
     lng: -123.1223,
     neighborhood: 'Coal Harbour',
     amenities: ['Concierge', 'Gym', 'Balcony', 'Marina View', 'Storage Locker'],
-    images: [EXTERIOR_PHOTOS[3], INTERIOR_PHOTOS[3]],
+    images: [EXTERIOR_MID[1], INTERIOR_MID[1]],
     parkingSpaces: 1,
     serviceCharge: 640,
   },
@@ -160,7 +176,7 @@ const properties: Seed[] = [
     lng: -122.6844,
     neighborhood: 'Pearl District',
     amenities: ['Roof Deck', 'Exposed Brick', 'In-unit Laundry', 'Pet Friendly'],
-    images: [EXTERIOR_PHOTOS[4], INTERIOR_PHOTOS[4]],
+    images: [EXTERIOR_MID[2], INTERIOR_MID[2]],
     furnishing: 'Unfurnished',
     parkingSpaces: 1,
   },
@@ -184,7 +200,7 @@ const properties: Seed[] = [
     lng: -97.7503,
     neighborhood: 'Downtown',
     amenities: ['Rooftop Pool', 'Coworking Lounge', 'Gym', 'Concierge', 'Pet Spa'],
-    images: [EXTERIOR_PHOTOS[5], INTERIOR_PHOTOS[5]],
+    images: [EXTERIOR_MID[3], INTERIOR_MID[3]],
     furnishing: 'Unfurnished',
     parkingSpaces: 1,
     serviceCharge: 185,
@@ -209,7 +225,7 @@ const properties: Seed[] = [
     lng: -104.9782,
     neighborhood: 'Capitol Hill',
     amenities: ['Private Patio', 'Attached Garage', 'Central Air', 'Dishwasher'],
-    images: [EXTERIOR_PHOTOS[6], INTERIOR_PHOTOS[6]],
+    images: [EXTERIOR_MID[4], INTERIOR_MID[4]],
     furnishing: 'Unfurnished',
     parkingSpaces: 2,
   },
@@ -235,7 +251,7 @@ const properties: Seed[] = [
     lng: -80.1300,
     neighborhood: 'South Beach',
     amenities: ['Beach Access', 'WiFi', 'Self Check-in', 'Air Conditioning', 'Linens Included'],
-    images: [EXTERIOR_PHOTOS[7], INTERIOR_PHOTOS[7]],
+    images: [EXTERIOR_MID[5], INTERIOR_MID[5]],
     furnishing: 'Fully Furnished',
   },
   {
@@ -258,7 +274,7 @@ const properties: Seed[] = [
     lng: -119.9772,
     neighborhood: 'Heavenly Valley',
     amenities: ['Hot Tub', 'Wood Stove', 'Ski Storage', 'WiFi', 'Mountain View'],
-    images: [EXTERIOR_PHOTOS[8], INTERIOR_PHOTOS[8]],
+    images: [EXTERIOR_LUXURY[2], INTERIOR_LUXURY[2]],
     furnishing: 'Fully Furnished',
     parkingSpaces: 2,
   },
@@ -284,7 +300,7 @@ const properties: Seed[] = [
     lng: -112.0740,
     neighborhood: 'Midtown',
     amenities: ['On-site Laundry', 'Covered Parking', 'Gated Entry'],
-    images: [EXTERIOR_PHOTOS[9], INTERIOR_PHOTOS[9]],
+    images: [EXTERIOR_MID[6], INTERIOR_MID[6]],
     isFeatured: true,
     investment: {
       roi: 11.4,
@@ -292,6 +308,8 @@ const properties: Seed[] = [
       marketTrend: 'Rising',
       description:
         'Rents trail market by roughly 18%. Turnover repositioning supports a projected 11.4% unlevered return over a five-year hold.',
+      minInvestment: 2500,
+      fundedPercent: 78,
     },
   },
   {
@@ -314,13 +332,15 @@ const properties: Seed[] = [
     lng: -86.7869,
     neighborhood: 'The Gulch',
     amenities: ['Street Frontage', 'NNN Leases', 'Rear Parking', 'Elevator'],
-    images: [EXTERIOR_PHOTOS[10], INTERIOR_PHOTOS[10]],
+    images: [EXTERIOR_LUXURY[3], INTERIOR_LUXURY[3]],
     investment: {
       roi: 9.8,
       rentalYield: 6.5,
       marketTrend: 'Stable',
       description:
         'Diversified income across retail and residential. Retail NNN leases run to 2029 with 3% annual escalators.',
+      minInvestment: 1000,
+      fundedPercent: 54,
     },
   },
   {
@@ -343,13 +363,171 @@ const properties: Seed[] = [
     lng: -80.8431,
     neighborhood: 'Steele Creek',
     amenities: ['New Construction', 'Attached Garages', 'Single Manager', 'Warranty Coverage'],
-    images: [EXTERIOR_PHOTOS[11], INTERIOR_PHOTOS[11]],
+    images: [EXTERIOR_LUXURY[4], INTERIOR_LUXURY[4]],
     investment: {
       roi: 8.9,
       rentalYield: 6.1,
       marketTrend: 'Rising',
       description:
         'New construction limits near-term capex. Charlotte rent growth has outpaced the national average for six consecutive quarters.',
+      minInvestment: 5000,
+      fundedPercent: 91,
+    },
+  },
+  {
+    id: '33333333-3333-4333-8333-000000000013',
+    title: 'Turnkey Duplex Near Tech Corridor',
+    description:
+      'Side-by-side duplex two miles from the east-side tech campuses, both units renovated in 2022 and leased through next summer.',
+    address: '1408 Rosewood Avenue',
+    city: 'Austin',
+    state: 'TX',
+    price: 620_000,
+    propertyType: 'Duplex',
+    type: 'INVESTMENT',
+    bedrooms: 6,
+    bathrooms: 4,
+    toilets: 4,
+    squareFootage: 3200,
+    yearBuilt: 2016,
+    lat: 30.2672,
+    lng: -97.7431,
+    neighborhood: 'East Austin',
+    amenities: ['In-unit Laundry', 'Off-street Parking', 'Fenced Yard'],
+    images: [EXTERIOR_AFFORDABLE[0], INTERIOR_AFFORDABLE[0]],
+    investment: {
+      roi: 10.2,
+      rentalYield: 6.8,
+      marketTrend: 'Rising',
+      description:
+        'Both units renovated in 2022 — minimal near-term capex. East Austin rents have climbed with continued tech-sector hiring nearby.',
+      minInvestment: 1000,
+      fundedPercent: 62,
+    },
+  },
+  {
+    id: '33333333-3333-4333-8333-000000000014',
+    title: 'Renovated Fourplex in Arts District',
+    description:
+      'Fully occupied fourplex a short walk from galleries and light rail, with a 2021 gut renovation across all four units.',
+    address: '3355 Larimer Street',
+    city: 'Denver',
+    state: 'CO',
+    price: 980_000,
+    propertyType: 'Fourplex',
+    type: 'INVESTMENT',
+    bedrooms: 8,
+    bathrooms: 4,
+    toilets: 4,
+    squareFootage: 4100,
+    yearBuilt: 1998,
+    lat: 39.7392,
+    lng: -104.9903,
+    neighborhood: 'RiNo Arts District',
+    amenities: ['On-site Laundry', 'Bike Storage', 'Renovated Units'],
+    images: [EXTERIOR_MID[7], INTERIOR_MID[7]],
+    investment: {
+      roi: 9.4,
+      rentalYield: 6.9,
+      marketTrend: 'Stable',
+      description:
+        'Gut-renovated in 2021, so near-term capex risk is low. Steady rents from a walkable, transit-connected arts corridor.',
+      minInvestment: 1000,
+      fundedPercent: 45,
+    },
+  },
+  {
+    id: '33333333-3333-4333-8333-000000000015',
+    title: 'Waterfront Short-Term Rental Portfolio',
+    description:
+      'Five furnished waterfront units under one professional short-term rental operator, with two years of verified booking history.',
+    address: '910 Bayshore Boulevard',
+    city: 'Tampa',
+    state: 'FL',
+    price: 1_420_000,
+    propertyType: 'Portfolio',
+    type: 'INVESTMENT',
+    bedrooms: 10,
+    bathrooms: 8,
+    toilets: 8,
+    squareFootage: 6800,
+    yearBuilt: 2019,
+    lat: 27.9506,
+    lng: -82.4572,
+    neighborhood: 'Bayshore',
+    amenities: ['Furnished', 'Pool Access', 'Professional Management', 'Booking History'],
+    images: [EXTERIOR_MID[8], INTERIOR_MID[8]],
+    isFeatured: true,
+    investment: {
+      roi: 13.6,
+      rentalYield: 8.9,
+      marketTrend: 'Strong',
+      description:
+        'Two years of verified nightly-rate booking data backs the projection. Waterfront STR demand has held through seasonal swings.',
+      minInvestment: 2500,
+      fundedPercent: 83,
+    },
+  },
+  {
+    id: '33333333-3333-4333-8333-000000000016',
+    title: 'Income Condo Block Near Transit',
+    description:
+      'Nine-unit condo block one block from light rail, fully leased with below-market rents offering room to grow on turnover.',
+    address: '2200 Rainier Avenue S',
+    city: 'Seattle',
+    state: 'WA',
+    price: 1_150_000,
+    propertyType: 'Condo Portfolio',
+    type: 'INVESTMENT',
+    bedrooms: 9,
+    bathrooms: 9,
+    toilets: 9,
+    squareFootage: 5400,
+    yearBuilt: 2011,
+    lat: 47.6062,
+    lng: -122.3321,
+    neighborhood: 'Rainier Valley',
+    amenities: ['Transit Access', 'Secure Entry', 'Storage Units'],
+    images: [EXTERIOR_MID[9], INTERIOR_MID[9]],
+    investment: {
+      roi: 8.1,
+      rentalYield: 5.4,
+      marketTrend: 'Stable',
+      description:
+        'Rents trail market, offering upside on turnover. Light rail access has kept occupancy steady through rate cycles.',
+      minInvestment: 1000,
+      fundedPercent: 37,
+    },
+  },
+  {
+    id: '33333333-3333-4333-8333-000000000017',
+    title: 'Suburban Build-to-Rent Cluster',
+    description:
+      'Newly delivered cluster of twelve single-family rentals under one HOA, fully leased at delivery with a single property manager.',
+    address: '780 Millbrook Court',
+    city: 'Raleigh',
+    state: 'NC',
+    price: 2_050_000,
+    propertyType: 'Portfolio',
+    type: 'INVESTMENT',
+    bedrooms: 15,
+    bathrooms: 12,
+    toilets: 12,
+    squareFootage: 11200,
+    yearBuilt: 2023,
+    lat: 35.7796,
+    lng: -78.6382,
+    neighborhood: 'North Raleigh',
+    amenities: ['New Construction', 'Attached Garages', 'Single Manager', 'HOA Maintained'],
+    images: [EXTERIOR_LUXURY[5], INTERIOR_LUXURY[5]],
+    investment: {
+      roi: 10.9,
+      rentalYield: 6.7,
+      marketTrend: 'Rising',
+      description:
+        'Delivered fully leased, so there is no lease-up risk. Raleigh has led the Southeast in build-to-rent absorption for two years running.',
+      minInvestment: 2500,
+      fundedPercent: 69,
     },
   },
 ];

@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { apiFetch } from '@/lib/api';
 import { ArrowLeft, BarChart3, Eye, Users } from 'lucide-react';
 import RequireRole from '@/components/RequireRole';
+import { StatTileSkeletonRow } from '@/components/skeletons/StatTileSkeleton';
+import { TableSkeleton } from '@/components/skeletons/TableSkeleton';
 
 type AgentRow = {
   agentId: string;
@@ -44,7 +46,27 @@ function AdminAnalytics() {
         <p className="text-gray-500 mb-10">Performance across all agents</p>
 
         {loading ? (
-          <p>Loading analytics...</p>
+          <>
+            <StatTileSkeletonRow count={4} className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12" />
+            <div className="bg-white rounded-3xl border border-gray-100 overflow-hidden shadow-sm">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-gray-50 text-gray-500 uppercase text-xs font-bold">
+                  <tr>
+                    <th className="p-4">Agent</th>
+                    <th className="p-4">Listings</th>
+                    <th className="p-4">Published</th>
+                    <th className="p-4">Approval %</th>
+                    <th className="p-4">Views</th>
+                    <th className="p-4">Leads</th>
+                    <th className="p-4">Top type</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <TableSkeleton columns={7} />
+                </tbody>
+              </table>
+            </div>
+          </>
         ) : data ? (
           <>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">

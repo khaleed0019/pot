@@ -6,24 +6,28 @@
  * Pricing is grounded in each city's real relative market tier (a rough
  * $/sqft band per tier), not arbitrary — a Cleveland listing and a San
  * Francisco listing of the same size land in believably different price
- * ranges. Photos are drawn from small exterior/interior pools per listing.
+ * ranges. Photos are drawn from photoPool.ts's tier-matched pools — a city's
+ * `tier` (ultra/high/mid/affordable) picks the same photo tier (luxury/mid/
+ * affordable), so a $150k Cleveland listing doesn't get a glass-and-steel
+ * mansion shot, and a San Francisco "ultra" listing doesn't get a modest
+ * cottage — the picture matches the number.
  *
  * Idempotent: every listing gets a deterministic UUID derived from its index,
  * so re-running upserts instead of duplicating.
  *
- * Photos come from ./photoPool.ts at a fixed offset (12), since seed.ts's 12
- * listings already claimed indices 0-11 — every photo in the shared pool is
- * assigned to at most one listing across both seed scripts combined.
- *
  * Run with: npm run seed:listings
  */
 import { PrismaClient, type ListingType } from '@prisma/client';
-import { EXTERIOR_PHOTOS, INTERIOR_PHOTOS } from './photoPool.js';
+import { pickTierPhotos, type PhotoTier } from './photoPool.js';
 
 const prisma = new PrismaClient();
 
-// seed.ts uses EXTERIOR_PHOTOS[0..11] / INTERIOR_PHOTOS[0..11] for its 12 listings.
-const PHOTO_OFFSET = 12;
+const TIER_TO_PHOTO_TIER: Record<Tier, PhotoTier> = {
+  ultra: 'luxury',
+  high: 'luxury',
+  mid: 'mid',
+  affordable: 'affordable',
+};
 
 // Deterministic PRNG (mulberry32) so re-running produces the exact same
 // listings instead of a new random set each time.
@@ -206,10 +210,11 @@ async function main() {
     const price = job.type === 'SALE' ? Math.round(rawPrice / 1000) * 1000 : Math.round(rawPrice / 25) * 25;
 
     const agent = pick(agents);
-    // Sequential, non-repeating index into the shared pool — guarantees every
-    // listing across this whole seed gets a photo no other listing uses.
-    const photoIndex = PHOTO_OFFSET + globalIndex;
-    const images = [EXTERIOR_PHOTOS[photoIndex], INTERIOR_PHOTOS[photoIndex]];
+    // Picked from the photo tier matching this listing's price tier (see the
+    // file header) — globalIndex still walks forward so two listings in the
+    // same tier don't get the exact same photo until that tier's pool wraps.
+    const { exterior, interior } = pickTierPhotos(TIER_TO_PHOTO_TIER[loc.tier], globalIndex);
+    const images = [exterior, interior];
     const amenities = Array.from({ length: int(3, 6) }, () => pick(AMENITY_POOL)).filter(
       (v, i, arr) => arr.indexOf(v) === i,
     );

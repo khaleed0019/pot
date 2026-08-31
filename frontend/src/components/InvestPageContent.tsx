@@ -1,11 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { TrendingUp, DollarSign, PieChart, Activity, MapPin, ChevronRight, Star, Map, List } from 'lucide-react';
+import { TrendingUp, DollarSign, Activity, Wallet, MapPin, ChevronRight, Star, Map, List, LineChart } from 'lucide-react';
 import PropertiesMap from '@/components/PropertiesMap';
 import Breadcrumbs from '@/components/Breadcrumbs';
+import { InvestmentCardSkeletonGrid } from '@/components/skeletons/InvestmentCardSkeleton';
 import { StaggerGrid, StaggerItem } from '@/components/motion/StaggerGrid';
+import MarketGrowthChart from '@/components/charts/MarketGrowthChart';
+import RoiYieldChart from '@/components/charts/RoiYieldChart';
+import Sparkline from '@/components/charts/Sparkline';
 import { firstImage, useProperties } from '@/lib/useProperties';
 
 const TESTIMONIALS = [
@@ -51,6 +55,19 @@ export default function InvestPageContent() {
   const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid');
   const { properties, loading, error } = useProperties('INVESTMENT');
 
+  const avgRoi = useMemo(() => {
+    const values = properties.map((p) => p.investmentData?.roi).filter((v): v is number => v != null);
+    if (values.length === 0) return null;
+    return values.reduce((sum, v) => sum + v, 0) / values.length;
+  }, [properties]);
+
+  const stats = [
+    { label: 'Total Volume', value: '$450M+', icon: DollarSign, color: 'text-blue-500' },
+    { label: 'Average ROI', value: avgRoi != null ? `${avgRoi.toFixed(1)}%` : '—', icon: TrendingUp, color: 'text-green-500' },
+    { label: 'Investors', value: '12,500+', icon: Activity, color: 'text-purple-500' },
+    { label: 'Starting From', value: '$1,000', icon: Wallet, color: 'text-orange-500' },
+  ];
+
   return (
     <div className="bg-white min-h-screen">
       {/* Investment Hero */}
@@ -66,9 +83,10 @@ export default function InvestPageContent() {
           <h1 className="text-4xl md:text-6xl font-extrabold mb-8 leading-tight max-w-4xl mx-auto">
             Build Wealth with Premium Real Estate Assets
           </h1>
-          <p className="text-xl text-gray-300 mb-12 max-w-2xl mx-auto">
+          <p className="text-xl text-gray-300 mb-6 max-w-2xl mx-auto">
             Invest in high-performing residential and commercial properties with verified ROI and market growth data.
           </p>
+          <p className="text-lg text-primary font-extrabold mb-12">Start investing from just $1,000 — no full-price buy-in required.</p>
           <div className="flex flex-col sm:flex-row justify-center gap-6">
             <button className="bg-primary text-white px-10 py-5 rounded-2xl font-bold text-lg hover:bg-blue-700 transition-all shadow-xl shadow-primary/20">
               Start Investing
@@ -84,12 +102,7 @@ export default function InvestPageContent() {
       <section className="py-12 -mt-16 relative z-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            {[
-              { label: 'Total Volume', value: '$450M+', icon: DollarSign, color: 'text-blue-500' },
-              { label: 'Average ROI', value: '11.4%', icon: TrendingUp, color: 'text-green-500' },
-              { label: 'Investors', value: '12,500+', icon: Activity, color: 'text-purple-500' },
-              { label: 'Asset Classes', value: '15+', icon: PieChart, color: 'text-orange-500' },
-            ].map((stat, i) => (
+            {stats.map((stat, i) => (
               <div key={i} className="bg-white rounded-[32px] p-8 shadow-2xl border border-gray-100 flex items-center space-x-6">
                 <div className={`${stat.color} bg-gray-50 p-4 rounded-2xl`}>
                   <stat.icon className="h-8 w-8" />
@@ -111,7 +124,7 @@ export default function InvestPageContent() {
           <div className="flex justify-between items-end mb-16">
             <div>
               <h2 className="text-4xl font-extrabold text-secondary">Investment Opportunities</h2>
-              <p className="text-gray-500 mt-2">Verified high-growth properties for your portfolio.</p>
+              <p className="text-gray-500 mt-2">Verified high-growth properties, starting from a $1,000 stake.</p>
             </div>
             <div className="flex items-center gap-2 bg-gray-100 p-1 rounded-2xl">
               <button
@@ -136,7 +149,7 @@ export default function InvestPageContent() {
           </div>
 
           {loading ? (
-            <p className="text-gray-500 font-bold">Loading investment properties...</p>
+            <InvestmentCardSkeletonGrid />
           ) : error ? (
             <p className="text-red-500 font-semibold">{error}</p>
           ) : viewMode === 'grid' ? (
@@ -147,6 +160,8 @@ export default function InvestPageContent() {
                   const roi = prop.investmentData?.roi;
                   const rentalYield = prop.investmentData?.rentalYield;
                   const marketTrend = prop.investmentData?.marketTrend;
+                  const minInvestment = prop.investmentData?.minInvestment ?? 1000;
+                  const fundedPercent = Math.max(0, Math.min(100, prop.investmentData?.fundedPercent ?? 0));
 
                   return (
                     <div
@@ -179,7 +194,7 @@ export default function InvestPageContent() {
                           {prop.title}
                         </h3>
 
-                        <div className="grid grid-cols-2 gap-4 mb-8">
+                        <div className="grid grid-cols-2 gap-4 mb-6">
                           <div className="bg-gray-50 p-4 rounded-3xl border border-gray-100">
                             <p className="text-xs text-gray-400 uppercase tracking-widest font-bold mb-1">
                               Rental Yield
@@ -198,13 +213,39 @@ export default function InvestPageContent() {
                           </div>
                         </div>
 
-                        <div className="mt-auto pt-8 border-t border-gray-100 flex items-center justify-between">
+                        {roi != null && (
+                          <div className="mb-6">
+                            <Sparkline roi={roi} seed={prop.id} />
+                          </div>
+                        )}
+
+                        <div className="mb-6">
+                          <div className="flex items-center justify-between mb-1.5">
+                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                              {fundedPercent}% funded
+                            </span>
+                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                              {(100 - fundedPercent).toFixed(0)}% remaining
+                            </span>
+                          </div>
+                          <div className="h-2 bg-accent rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-primary rounded-full transition-all"
+                              style={{ width: `${fundedPercent}%` }}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="mt-auto pt-6 border-t border-gray-100 flex items-center justify-between">
                           <div>
                             <p className="text-xs text-gray-400 uppercase tracking-widest font-bold">
-                              Investment Starting at
+                              Starting at
                             </p>
                             <p className="text-2xl font-extrabold text-primary">
-                              ${Number(prop.price || 0).toLocaleString()}
+                              ${minInvestment.toLocaleString()}
+                            </p>
+                            <p className="text-[11px] text-gray-400 font-bold mt-0.5">
+                              of ${Number(prop.price || 0).toLocaleString()} asset
                             </p>
                           </div>
                           <Link
@@ -240,34 +281,35 @@ export default function InvestPageContent() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
             <div className="relative">
               <div className="absolute -left-20 -top-20 w-80 h-80 bg-primary/10 rounded-full blur-3xl"></div>
-              <div className="relative bg-white rounded-[50px] p-10 shadow-2xl border border-gray-100">
-                <div className="flex items-center justify-between mb-10">
-                  <h4 className="text-2xl font-extrabold text-secondary">Market Performance</h4>
-                  <div className="flex space-x-2">
-                    <div className="w-3 h-3 rounded-full bg-primary"></div>
-                    <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                  </div>
-                </div>
-                <div className="space-y-8">
-                  {[
-                    { city: 'Miami, FL', yield: '8.4%', trend: 'Upward', color: 'bg-green-100 text-green-600' },
-                    { city: 'Austin, TX', yield: '7.2%', trend: 'Stable', color: 'bg-blue-100 text-blue-600' },
-                    { city: 'Phoenix, AZ', yield: '9.1%', trend: 'Strong', color: 'bg-purple-100 text-purple-600' },
-                    { city: 'Toronto, ON', yield: '5.8%', trend: 'Upward', color: 'bg-orange-100 text-orange-600' },
-                  ].map((city, i) => (
-                    <div key={i} className="flex items-center justify-between p-6 rounded-3xl bg-gray-50 border border-gray-100">
-                      <div className="flex items-center space-x-4">
-                        <div className={`p-3 rounded-2xl ${city.color}`}>
-                          <Activity className="h-5 w-5" />
-                        </div>
-                        <p className="text-lg font-bold text-secondary">{city.city}</p>
+              <div className="relative bg-white rounded-[50px] p-10 shadow-2xl border border-gray-100 space-y-12">
+                <div>
+                  <div className="flex items-center justify-between mb-8">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-primary/10 p-2.5 rounded-2xl">
+                        <LineChart className="h-5 w-5 text-primary" />
                       </div>
-                      <div className="text-right">
-                        <p className="text-lg font-extrabold text-secondary">{city.yield}</p>
-                        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">{city.trend}</p>
-                      </div>
+                      <h4 className="text-xl font-extrabold text-secondary">12-Month Value Index</h4>
                     </div>
-                  ))}
+                  </div>
+                  {loading ? (
+                    <div className="h-64 bg-gray-50 rounded-3xl animate-pulse" />
+                  ) : (
+                    <MarketGrowthChart properties={properties} />
+                  )}
+                </div>
+
+                <div className="pt-4 border-t border-gray-100">
+                  <div className="flex items-center gap-3 mb-8">
+                    <div className="bg-primary/10 p-2.5 rounded-2xl">
+                      <TrendingUp className="h-5 w-5 text-primary" />
+                    </div>
+                    <h4 className="text-xl font-extrabold text-secondary">ROI vs. Rental Yield</h4>
+                  </div>
+                  {loading ? (
+                    <div className="h-64 bg-gray-50 rounded-3xl animate-pulse" />
+                  ) : (
+                    <RoiYieldChart properties={properties} />
+                  )}
                 </div>
               </div>
             </div>

@@ -10,10 +10,15 @@ import {
   Eye,
   MessageSquare,
   RefreshCcw,
+  Tag,
   Trash2,
+  X,
   XCircle,
 } from 'lucide-react';
 import RequireRole from '@/components/RequireRole';
+import { ListRowSkeletonStack } from '@/components/skeletons/ListRowSkeleton';
+import DiscountBadge from '@/components/DiscountBadge';
+import { discountPercent } from '@/lib/discount';
 
 const TABS = [
   { id: 'pending', label: 'Pending' },
@@ -32,6 +37,7 @@ type PropertyRow = {
   city?: string;
   country?: string;
   price: number;
+  originalPrice?: number | null;
   currency?: string;
   status: string;
   description?: string;
@@ -52,6 +58,58 @@ function AdminProperties() {
   const [adminNote, setAdminNote] = useState('');
   const [rejectionReason, setRejectionReason] = useState('');
   const [acting, setActing] = useState(false);
+  const [discountEditingId, setDiscountEditingId] = useState<string | null>(null);
+  const [discountInput, setDiscountInput] = useState('');
+  const [discountError, setDiscountError] = useState<string | null>(null);
+  const [discountSaving, setDiscountSaving] = useState(false);
+
+  const openDiscountEditor = (p: PropertyRow) => {
+    setDiscountEditingId(p.id);
+    setDiscountError(null);
+    const existingPct = discountPercent(p.price, p.originalPrice);
+    setDiscountInput(existingPct != null ? String(existingPct) : '');
+  };
+
+  const applyDiscount = async (p: PropertyRow) => {
+    const pct = Number(discountInput);
+    if (!Number.isFinite(pct) || pct <= 0 || pct >= 100) {
+      setDiscountError('Enter a percent between 1 and 99');
+      return;
+    }
+    setDiscountSaving(true);
+    setDiscountError(null);
+    try {
+      // Solve originalPrice from "price is (1 - pct%) of originalPrice".
+      const originalPrice = Math.round(p.price / (1 - pct / 100));
+      const updated = await apiFetch(`/admin/properties/${p.id}/discount`, {
+        method: 'PATCH',
+        body: JSON.stringify({ originalPrice }),
+      });
+      setProperties((prev) => prev.map((x) => (x.id === p.id ? { ...x, originalPrice: updated.originalPrice } : x)));
+      setDiscountEditingId(null);
+    } catch (e: unknown) {
+      setDiscountError(e instanceof Error ? e.message : 'Could not apply discount');
+    } finally {
+      setDiscountSaving(false);
+    }
+  };
+
+  const clearDiscount = async (p: PropertyRow) => {
+    setDiscountSaving(true);
+    setDiscountError(null);
+    try {
+      await apiFetch(`/admin/properties/${p.id}/discount`, {
+        method: 'PATCH',
+        body: JSON.stringify({ originalPrice: null }),
+      });
+      setProperties((prev) => prev.map((x) => (x.id === p.id ? { ...x, originalPrice: null } : x)));
+      setDiscountEditingId(null);
+    } catch (e: unknown) {
+      setDiscountError(e instanceof Error ? e.message : 'Could not clear discount');
+    } finally {
+      setDiscountSaving(false);
+    }
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -156,69 +214,133 @@ function AdminProperties() {
 
         {error && <p className="text-red-500 font-semibold mb-4">{error}</p>}
         {loading ? (
-          <p>Loading...</p>
+          <ListRowSkeletonStack leading="none" />
         ) : (
           <div className="space-y-4">
             {properties.length === 0 ? (
               <p className="text-gray-500">No listings in this tab.</p>
             ) : (
-              properties.map((p) => (
+              properties.map((p) => {
+                const pct = discountPercent(p.price, p.originalPrice);
+                return (
                 <div
                   key={p.id}
-                  className="bg-white rounded-3xl p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4 border border-gray-100 shadow-sm"
+                  className="bg-white rounded-3xl p-6 flex flex-col gap-4 border border-gray-100 shadow-sm"
                 >
-                  <div>
-                    <p className="font-extrabold text-secondary">{p.title || 'Untitled'}</p>
-                    <p className="text-sm text-gray-500">
-                      {p.address}
-                      {p.city ? `, ${p.city}` : ''} · {p.currency || 'USD'} {p.price?.toLocaleString?.()}
-                    </p>
-                    <p className="text-xs font-bold mt-1 uppercase text-gray-400">Status: {p.status}</p>
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                    <div>
+                      <p className="font-extrabold text-secondary">{p.title || 'Untitled'}</p>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-sm text-gray-500">
+                          {p.address}
+                          {p.city ? `, ${p.city}` : ''} · {p.currency || 'USD'} {p.price?.toLocaleString?.()}
+                        </p>
+                        {pct != null && (
+                          <>
+                            <p className="text-xs text-gray-400 line-through font-bold">
+                              {p.currency || 'USD'} {p.originalPrice!.toLocaleString()}
+                            </p>
+                            <DiscountBadge percent={pct} />
+                          </>
+                        )}
+                      </div>
+                      <p className="text-xs font-bold mt-1 uppercase text-gray-400">Status: {p.status}</p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        onClick={() => openPreview(p.id)}
+                        className="flex items-center gap-1 bg-gray-50 text-secondary px-4 py-2 rounded-2xl text-sm font-bold hover:bg-gray-100"
+                      >
+                        <Eye className="h-4 w-4" /> Preview
+                      </button>
+                      <button
+                        onClick={() => (discountEditingId === p.id ? setDiscountEditingId(null) : openDiscountEditor(p))}
+                        className={`flex items-center gap-1 px-4 py-2 rounded-2xl text-sm font-bold ${
+                          pct != null ? 'bg-red-50 text-red-700 hover:bg-red-100' : 'bg-gray-50 text-secondary hover:bg-gray-100'
+                        }`}
+                      >
+                        <Tag className="h-4 w-4" /> {pct != null ? `${pct}% off` : 'Discount'}
+                      </button>
+                      {p.status === 'PENDING' && (
+                        <>
+                          <button
+                            onClick={async () => {
+                              await apiFetch(`/admin/properties/${p.id}/approve`, {
+                                method: 'POST',
+                                body: JSON.stringify({}),
+                              });
+                              load();
+                            }}
+                            className="flex items-center gap-1 bg-green-50 text-green-700 px-4 py-2 rounded-2xl text-sm font-bold"
+                          >
+                            <CheckCircle2 className="h-4 w-4" /> Approve
+                          </button>
+                          <button
+                            onClick={async () => {
+                              await apiFetch(`/admin/properties/${p.id}/reject`, {
+                                method: 'POST',
+                                body: JSON.stringify({ rejectionReason: 'Rejected' }),
+                              });
+                              load();
+                            }}
+                            className="flex items-center gap-1 bg-red-50 text-red-700 px-4 py-2 rounded-2xl text-sm font-bold"
+                          >
+                            <XCircle className="h-4 w-4" /> Reject
+                          </button>
+                        </>
+                      )}
+                      <button
+                        onClick={() => remove(p)}
+                        className="flex items-center gap-1 bg-white border border-red-100 text-red-600 px-4 py-2 rounded-2xl text-sm font-bold hover:bg-red-50"
+                      >
+                        <Trash2 className="h-4 w-4" /> Delete
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      onClick={() => openPreview(p.id)}
-                      className="flex items-center gap-1 bg-gray-50 text-secondary px-4 py-2 rounded-2xl text-sm font-bold hover:bg-gray-100"
-                    >
-                      <Eye className="h-4 w-4" /> Preview
-                    </button>
-                    {p.status === 'PENDING' && (
-                      <>
+
+                  {discountEditingId === p.id && (
+                    <div className="flex flex-wrap items-center gap-3 bg-gray-50 rounded-2xl p-4 border border-gray-100">
+                      <label className="text-sm font-bold text-gray-500 shrink-0">Discount</label>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          min={1}
+                          max={99}
+                          value={discountInput}
+                          onChange={(e) => setDiscountInput(e.target.value)}
+                          placeholder="e.g. 10"
+                          className="w-24 border border-gray-200 rounded-xl pl-3 pr-7 py-2 text-sm font-bold focus:outline-none focus:border-primary"
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-400 font-bold">%</span>
+                      </div>
+                      <button
+                        disabled={discountSaving}
+                        onClick={() => applyDiscount(p)}
+                        className="bg-primary text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-blue-700 disabled:opacity-50"
+                      >
+                        Apply
+                      </button>
+                      {pct != null && (
                         <button
-                          onClick={async () => {
-                            await apiFetch(`/admin/properties/${p.id}/approve`, {
-                              method: 'POST',
-                              body: JSON.stringify({}),
-                            });
-                            load();
-                          }}
-                          className="flex items-center gap-1 bg-green-50 text-green-700 px-4 py-2 rounded-2xl text-sm font-bold"
+                          disabled={discountSaving}
+                          onClick={() => clearDiscount(p)}
+                          className="text-sm font-bold text-gray-400 hover:text-red-600 disabled:opacity-50"
                         >
-                          <CheckCircle2 className="h-4 w-4" /> Approve
+                          Clear discount
                         </button>
-                        <button
-                          onClick={async () => {
-                            await apiFetch(`/admin/properties/${p.id}/reject`, {
-                              method: 'POST',
-                              body: JSON.stringify({ rejectionReason: 'Rejected' }),
-                            });
-                            load();
-                          }}
-                          className="flex items-center gap-1 bg-red-50 text-red-700 px-4 py-2 rounded-2xl text-sm font-bold"
-                        >
-                          <XCircle className="h-4 w-4" /> Reject
-                        </button>
-                      </>
-                    )}
-                    <button
-                      onClick={() => remove(p)}
-                      className="flex items-center gap-1 bg-white border border-red-100 text-red-600 px-4 py-2 rounded-2xl text-sm font-bold hover:bg-red-50"
-                    >
-                      <Trash2 className="h-4 w-4" /> Delete
-                    </button>
-                  </div>
+                      )}
+                      <button
+                        onClick={() => setDiscountEditingId(null)}
+                        className="ml-auto text-gray-400 hover:text-secondary"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                      {discountError && <p className="text-xs font-bold text-red-500 w-full">{discountError}</p>}
+                    </div>
+                  )}
                 </div>
-              ))
+                );
+              })
             )}
           </div>
         )}

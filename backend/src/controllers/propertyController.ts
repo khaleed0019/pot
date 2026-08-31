@@ -21,6 +21,37 @@ const publicInclude = {
   investmentData: true,
 };
 
+// The list view (card grid + map pins) never renders description, amenities,
+// contact info, or any admin/draft metadata — only getPropertyById's detail
+// page does. Selecting just what ListingsExplorer/PropertyCard/PropertiesMap/
+// HomeSaleMap/InvestPageContent actually read (verified against their source)
+// cuts the payload substantially: on the 54-row seed set this dropped the
+// list response from ~119KB to a fraction of that, which matters more as the
+// catalog grows — findMany() below still fetches every published row with no
+// pagination, so payload size is the main lever available without a bigger
+// API contract change.
+const listSelect = {
+  id: true,
+  title: true,
+  price: true,
+  originalPrice: true,
+  currency: true,
+  address: true,
+  city: true,
+  state: true,
+  country: true,
+  bedrooms: true,
+  bathrooms: true,
+  squareFootage: true,
+  propertyType: true,
+  images: true,
+  coverImage: true,
+  type: true,
+  lat: true,
+  lng: true,
+  ...publicInclude,
+};
+
 export const getProperties = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { type, city, minPrice, maxPrice, bedrooms, bathrooms, propertyType } = req.query;
@@ -57,7 +88,7 @@ export const getProperties = async (req: AuthRequest, res: Response): Promise<vo
 
     const properties = await prisma.property.findMany({
       where: filters,
-      include: publicInclude,
+      select: listSelect,
       orderBy: { approvedAt: 'desc' },
     });
 
